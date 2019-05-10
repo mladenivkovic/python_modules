@@ -7,29 +7,27 @@
 
 
 #==========================================
-def read_file():
+def read_file(srcfile, ptype):
 #==========================================
     """
     Read swift output hdf5 file.
     """
 
     import h5py
-    import settings as s
 
-    f = h5py.File(s.srcfile)
+    f = h5py.File(srcfile)
 
-    s.x = f[s.ptype]['Coordinates'][:,0]
-    s.y = f[s.ptype]['Coordinates'][:,1]
-    s.h = f[s.ptype]['SmoothingLength'][:]
-    s.rho = f[s.ptype]['Density'][:]
-    s.m = f[s.ptype]['Masses'][:]
+    x = f[ptype]['Coordinates'][:,0]
+    y = f[ptype]['Coordinates'][:,1]
+    h = f[ptype]['SmoothingLength'][:]
+    rho = f[ptype]['Density'][:]
+    m = f[ptype]['Masses'][:]
 
-    s.npart = s.x.shape[0]
+    npart = x.shape[0]
 
     f.close()
 
-    # TODO: remove returns
-    return s.x, s.y, s.h, s.rho, s.m, s.npart
+    return x, y, h, rho, m, npart
 
 
 
