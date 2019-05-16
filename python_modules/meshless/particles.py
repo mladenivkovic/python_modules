@@ -4,6 +4,8 @@
 # Particle related methods
 #===============================
 
+import numpy as np
+
 
 
 
@@ -67,3 +69,28 @@ def V(ind, m, rho):
 
 
 
+#======================================
+def find_central_particle(L, ids):
+#======================================
+    """
+    Find the index of the central particle at (0.5, 0.5)
+    """
+
+    i = L//2-1
+    cid = i*L + i + 1
+    cind = np.asscalar(np.where(ids==cid)[0])
+
+    return cind
+
+
+#======================================
+def find_added_particle(ids):
+#======================================
+    """
+    Find the index of the added particle (has highest ID)
+    """
+
+    pid = ids.shape[0]
+    pind = np.asscalar(np.where(ids==pid)[0])
+
+    return pind

@@ -132,8 +132,7 @@ def W(q, h, kernel='cubic_spline'):
 
 
     else:
-        print("Didn't find kernel", kernel)
-        quit()
+        raise ValueError("Didn't find kernel", kernel)
 
 
     return
