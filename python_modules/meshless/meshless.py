@@ -180,16 +180,11 @@ def Integrand_Aij_Ivanova(iind, jind, xx, yy, hh, x, y, h, m, rho, kernel='cubic
     inserted.
     """
 
-    nbors = find_neighbours_arbitrary_x(xx, yy, x, y, h, fact=2)
+    nbors = find_neighbours_arbitrary_x(xx, yy, x, y, h, fact)
 
     xk = x[nbors]
     yk = y[nbors]
     hk = h[nbors]
-
-#      print("xx:", xx, "yy:", yy)
-    #  for n in nbors:
-    #      print(n, x[n], y[n], h[n])
-    #  print("----------------------------")
 
 
 
@@ -383,7 +378,6 @@ def h_of_x(xx, yy, x, y, h, m, rho, kernel='cubic_spline', fact=2):
     psi_j /= np.sum(psi_j)
 
     hh = np.sum(hj*psi_j)
-
 
     return hh
 

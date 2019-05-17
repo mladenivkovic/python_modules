@@ -43,7 +43,6 @@ def find_neighbours(ind, x, y, h, fact=2):
     returns list of neighbour indices
     """
 
-
     x0 = x[ind]
     y0 = y[ind]
     fhsq = h[ind]*h[ind]*fact*fact
