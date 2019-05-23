@@ -33,14 +33,18 @@ def find_index(x, y, h, pcoord):
 
 
 
-#============================================
-def find_neighbours(ind, x, y, h, fact=2):
-#============================================
+#================================================================
+def find_neighbours(ind, x, y, h, fact=2, L=1, periodic=True):
+#================================================================
     """
     Find indices of all neighbours of a particle with index ind
     within fact*h (where kernel != 0)
-    x, y, h: arrays of positions/h of all particles
-    returns list of neighbour indices
+    x, y, h:    arrays of positions/h of all particles
+    fact:       kernel support radius factor: W = 0 for r > fact*h
+    L:          boxsize
+    periodic:   Whether you assume periodic boundary conditions
+
+    returns list of neighbour indices in x,y,h array
     """
 
     x0 = x[ind]
@@ -48,28 +52,49 @@ def find_neighbours(ind, x, y, h, fact=2):
     fhsq = h[ind]*h[ind]*fact*fact
     neigh = [None for i in x]
 
+    Lhalf = 0.5*L
+
     j = 0
     for i in range(x.shape[0]):
         if i==ind:
             continue
 
-        dist = (x[i]-x0)**2 + (y[i]-y0)**2
+        dx = x[i] - x0
+        dy = y[i] - y0
+
+        if periodic:
+            if dx > Lhalf:
+                dx -= L
+            if dx < -Lhalf:
+                dx += L
+
+            if dy > Lhalf:
+                dy -= L
+            if dy < -Lhalf:
+                dy += L
+
+        dist = dx**2 + dy**2 
         if dist < fhsq:
             neigh[j] = i
             j+=1
+
 
     return neigh[:j]
 
 
 
 
-#===========================================================
-def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=2):
-#===========================================================
+#=================================================================================
+def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=2, L=1, periodic=True):
+#=================================================================================
     """
     Find indices of all neighbours around position x0, y0
     within fact*h (where kernel != 0)
-    x, y, h: arrays of positions/h of all particles
+    x, y, h:    arrays of positions/h of all particles
+    fact:       kernel support radius factor: W = 0 for r > fact*h
+    L:          boxsize
+    periodic:   Whether you assume periodic boundary conditions
+
     returns list of neighbour indices
     """
 
@@ -77,12 +102,30 @@ def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=2):
     neigh = [None for i in x]
     j = 0
 
+    Lhalf = 0.5*L
+
 
     if isinstance(h, np.ndarray):
         fsq = fact*fact
 
         for i in range(x.shape[0]):
-            dist = (x[i]-x0)**2 + (y[i]-y0)**2
+
+            dx = x[i] - x0
+            dy = y[i] - y0
+
+            if periodic:
+                if dx > Lhalf:
+                    dx -= L
+                if dx < -Lhalf:
+                    dx += L
+
+                if dy > Lhalf:
+                    dy -= L
+                if dy < -Lhalf:
+                    dy += L
+
+            dist = dx**2 + dy**2
+
             fhsq = h[i]*h[i]*fsq
             if dist < fhsq:
                 neigh[j]=i
@@ -91,7 +134,23 @@ def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=2):
     else:
         fhsq = fact*fact*h*h
         for i in range(x.shape[0]):
-            dist = (x[i]-x0)**2 + (y[i]-y0)**2
+
+            dx = x[i] - x0
+            dy = y[i] - y0
+
+            if periodic:
+                if dx > Lhalf:
+                    dx -= L
+                if dx < -Lhalf:
+                    dx += L
+
+                if dy > Lhalf:
+                    dy -= L
+                if dy < -Lhalf:
+                    dy += L
+
+            dist = dx**2 + dy**2
+
             if dist < fhsq:
                 neigh[j] = i
                 j+=1
@@ -110,8 +169,10 @@ def V(ind, m, rho):
     """
     Volume estimate for particle with index ind
     """
-
-    return m[ind]/rho[ind]
+    V = m[ind]/rho[ind]
+    if V > 1:
+        print("Got particle volume V=", v, ". Did you put the arguments in the correct places?")
+    return V
 
 
 

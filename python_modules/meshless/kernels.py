@@ -28,6 +28,13 @@ kernel_shortlist_H_over_h = [1.778002, 2.158131,
 
 
 
+kernel_H_over_h_dict = {}
+for kernel in kernels:
+    if kernel in kernels_shortlist:
+        kernel_H_over_h_dict[kernel] = kernel_shortlist_H_over_h[kernels_shortlist.index(kernel)]
+        print('added', kernel)
+    else:
+        kernel_H_over_h_dict[kernel] = 1
 
 
 
@@ -37,6 +44,9 @@ def W(q, h, kernel='cubic_spline'):
 #=====================================
     """
     Various kernels
+
+    q: del x / h
+    h: compact support radius, not smoothing length!
 
     Currently implemented:
         cubic_spline, 
@@ -49,6 +59,9 @@ def W(q, h, kernel='cubic_spline'):
         wendland_C6
     """ 
     #  https://pysph.readthedocs.io/en/latest/reference/kernels.html#liu2010
+
+    # convert compact support radius to smoothing length
+    h /= kernel_H_over_h_dict[kernel]
 
     if kernel == 'cubic_spline': 
 
@@ -160,3 +173,23 @@ def W(q, h, kernel='cubic_spline'):
 
 
     return
+
+
+
+
+
+#===================================
+def get_H(h, kernel='cubic_spline'):
+#===================================
+    """
+    Compute the smoothing length in terms of the compact support length
+    of a given kernel.
+    The kernels defined above are defined and scales to support a region
+    <= 2H.
+    """
+    
+    fact = 0.5 * kernel_shortlist_H_over_h[kernels_shortlist.index(kernel)]
+
+    H = fact * h
+
+    return H

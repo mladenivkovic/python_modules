@@ -22,7 +22,7 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
 #==========================================================================
     """
     Compute A_ij as defined by Hopkins 2015
-    i, j: particle indices for x, y, h, m arrays
+    pind: particle index for which to work with. (The i in A_ij) 
     x, y, h, m: full data arrays as read in from hdf5 file
     kernel: which kernel to use
     fact:   factor for h for limit of neighbour search; neighbours are closer than fact*h
@@ -87,6 +87,9 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
     
         omega_xj = (np.sum(psi_k) + psi_null)
 
+        Vk = V(n, m, rho)
+        print(1/omega_xj, Vk, (1/omega_xj-Vk)/Vk)
+
         psi_i[i]/= omega_xj
         psi_k /= omega_xj
         psi_k = np.float64(psi_k)
@@ -122,7 +125,129 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
         print("particle volume estimate:", 1.0/(np.sum(psi_j)+psi_null))
 
 
+
     return A_ij
+
+
+
+
+
+
+
+#==========================================================================
+def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
+#==========================================================================
+    """
+    Compute A_ij as defined by Ivanova 2013
+    pind: particle index for which to work for (The i in A_ij)
+    x, y, h, m, rho: full data arrays as read in from hdf5 file
+    kernel: which kernel to use
+    fact:   factor for h for limit of neighbour search; neighbours are closer than fact*h
+    """
+
+
+    npart = x.shape[0]
+
+
+    # compute all psi_k(x_l) for all l, k
+    psi_k_at_l = np.zeros((npart, npart), dtype=np.float128)
+
+    #  for k in range(npart):
+    #      for l in range(k, npart):
+    #          # kernels are symmetric: just compute half
+    #          psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel)
+    #          psi_k_at_l[l,k] = psi_k_at_l[k,l]
+    for k in range(npart):
+        for l in range(npart):
+            # kernels are symmetric: just compute half
+            psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel)
+            #  psi_k_at_l[l,k] = psi_k_at_l[k,l]
+
+
+    neighbours = [[] for i in x]
+    omega = np.zeros(npart, dtype=np.float128)
+
+    for l in range(npart):
+
+        # find and store all neighbours;
+        neighbours[l] = find_neighbours(l, x, y, h, fact)
+
+        # compute normalisation omega for all particles
+        # needs psi_k_at_l to be computed already
+        omega[l] =  np.sum(psi_k_at_l[:, l])
+        # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
+
+
+
+
+    #  f = open('omegas.txt', 'w')
+    #  print("omega shape", omega.shape)
+    #  for k in range(npart):
+    #      line = ""
+    #      for l in range(npart):
+    #          line+='{0:8.6f} '.format(omega[k,l])
+    #      line += ("\n")
+    #      f.write(line)
+    #  f.close()
+
+    
+    # normalize psi's and convert to float64 for linalg module
+    for i in range(npart):
+        psi_k_at_l[i, :] /= omega[i]
+    psi_k_at_l = np.float64(psi_k_at_l)
+
+
+
+
+    # compute all matrices B_k
+    B_k = np.zeros((npart), dtype=np.matrix)
+    for k in range(npart):
+        nbors = neighbours[k]
+        B_k[k] = get_matrix(x[k], y[k], x[nbors], y[nbors], psi_k_at_l[nbors, k])
+
+
+    # compute all psi_tilde_k at every l
+    psi_tilde_k_at_l = np.zeros((npart, npart, 2))
+    for k in range(npart):
+        for l in range(npart):
+
+            dx = np.array([x[k]-x[l], y[k]-y[l]])
+            psi_tilde_k_at_l[k,l] = np.dot(B_k[l], dx) * psi_k_at_l[k,l]
+
+ 
+
+    # now compute A_ij for all neighbours j of i
+    nbors = neighbours[pind]
+
+    A_ij = np.zeros((len(nbors), 2), dtype=np.float64)
+
+    for i,j in enumerate(nbors): 
+        
+        A = np.array([0.0,0.0])
+        for k in range(npart): 
+            psi_i_xk = psi_k_at_l[pind, k]
+            psi_j_xk = psi_k_at_l[j, k]
+            Vk = V(k, m, rho) 
+            print(1/omega[k], Vk, (1/omega[k]-Vk)/Vk)
+            temp = np.array([0.0,0.0])
+            for l in range(npart):
+                psi_i_xl = psi_k_at_l[pind, l]
+                psi_j_xl = psi_k_at_l[j, l]
+                psi_tilde_l = psi_tilde_k_at_l[l, k]
+
+                temp += (psi_j_xk * psi_i_xl - psi_i_xk * psi_j_xl) * psi_tilde_l
+            
+            temp *= Vk
+            A += temp
+    
+        A_ij[i] = A
+
+ 
+    return A_ij
+
+
+
+
 
 
 
@@ -329,14 +454,41 @@ def compute_psi(xi, yi, xj, yj, h, kernel='cubic_spline'):
 
 
 
-#====================================================
-def psi(x, y, xi, yi, hi, kernel='cubic_spline'):
-#====================================================
+#==========================================================================
+def psi(x, y, xi, yi, hi, kernel='cubic_spline', L=1, periodic=True):
+#==========================================================================
     """
     UNNORMALIZED Volume fraction at position x of some particle
     with coordinates xi, yi, smoothing length hi
+
+    i.e. psi_i(x) = W([x - xi, y - yi], hi)
+
+    L:          boxsize
+    periodic:   Whether you assume periodic boundary conditions
+
+    !!!! returns type np.float128! 
+    Needed to prevent precision errors for normalisation
     """
-    q = np.float128(np.sqrt((x - xi)**2 + (y - yi)**2)/hi)
+
+
+    Lhalf = 0.5*L
+
+    dx = x - xi
+    dy = y - yi
+
+    if periodic:
+        if dx > Lhalf:
+            dx -= L
+        elif dx < -Lhalf:
+            dx += L
+
+        if dy > Lhalf:
+            dy -= L
+        elif dy < -Lhalf:
+            dy += L
+
+
+    q = np.float128(np.sqrt(dx**2 + dy**2)/hi)
 
     return W(q, hi, kernel)
 
