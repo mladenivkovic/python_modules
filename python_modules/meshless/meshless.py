@@ -138,6 +138,8 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
 
 
     # compute all psi_k(x_l) for all l, k
+    # first index: index k of psi: psi_k(x)
+    # second index: index of x_l: psi(x_l)
     psi_k_at_l = np.zeros((npart, npart), dtype=np.float128)
 
     for k in range(npart):
@@ -167,7 +169,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
 
     # normalize psi's and convert to float64 for linalg module
     for k in range(npart):
-        psi_k_at_l[:, k] /= omega[k]
+        psi_k_at_l[k, :] /= omega[k]
     psi_k_at_l = np.float64(psi_k_at_l)
 
 
@@ -177,7 +179,9 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
     B_k = np.zeros((npart), dtype=np.matrix)
     for k in range(npart):
         nbors = neighbours[k]
+        # nbors now contains all neighbours l
         B_k[k] = get_matrix(x[k], y[k], x[nbors], y[nbors], psi_k_at_l[nbors, k])
+
 
 
     # compute all psi_tilde_k at every l
@@ -459,12 +463,13 @@ def psi(x, y, xi, yi, hi, kernel='cubic_spline', L=1, periodic=True):
     """
 
 
-    Lhalf = 0.5*L
-
     dx = x - xi
     dy = y - yi
 
     if periodic:
+
+        Lhalf = 0.5*L
+
         if dx > Lhalf:
             dx -= L
         elif dx < -Lhalf:

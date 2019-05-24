@@ -54,8 +54,6 @@ def find_neighbours(ind, x, y, h, fact=1, L=1, periodic=True):
         fhsq = h[ind]*h[ind]*fact*fact
         neigh = [None for i in x]
 
-        Lhalf = 0.5*L
-
         j = 0
         for i in range(x.shape[0]):
             if i==ind:
@@ -65,6 +63,9 @@ def find_neighbours(ind, x, y, h, fact=1, L=1, periodic=True):
             dy = y[i] - y0
 
             if periodic:
+
+                Lhalf = 0.5*L
+
                 if dx > Lhalf:
                     dx -= L
                 if dx < -Lhalf:
@@ -112,8 +113,6 @@ def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1, L=1, periodic=True):
         neigh = [None for i in x]
         j = 0
 
-        Lhalf = 0.5*L
-
 
         if isinstance(h, np.ndarray):
             fsq = fact*fact
@@ -124,6 +123,9 @@ def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1, L=1, periodic=True):
                 dy = y[i] - y0
 
                 if periodic:
+
+                    Lhalf = 0.5*L
+
                     if dx > Lhalf:
                         dx -= L
                     if dx < -Lhalf:
@@ -149,6 +151,9 @@ def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1, L=1, periodic=True):
                 dy = y[i] - y0
 
                 if periodic:
+
+                    Lhalf = 0.5*L
+
                     if dx > Lhalf:
                         dx -= L
                     if dx < -Lhalf:
