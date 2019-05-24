@@ -140,16 +140,11 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
     # compute all psi_k(x_l) for all l, k
     psi_k_at_l = np.zeros((npart, npart), dtype=np.float128)
 
-    #  for k in range(npart):
-    #      for l in range(k, npart):
-    #          # kernels are symmetric: just compute half
-    #          psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel)
-    #          psi_k_at_l[l,k] = psi_k_at_l[k,l]
     for k in range(npart):
-        for l in range(npart):
+        for l in range(k, npart):
             # kernels are symmetric: just compute half
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel)
-            #  psi_k_at_l[l,k] = psi_k_at_l[k,l]
+            psi_k_at_l[l,k] = psi_k_at_l[k,l]
 
 
     neighbours = [[] for i in x]
@@ -164,13 +159,15 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
         # needs psi_k_at_l to be computed already
         omega[l] =  np.sum(psi_k_at_l[:, l])
         # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
+        # at this point, the psi arrays are symmetric anyway, so it doesn't actually matter
+
 
 
 
 
     # normalize psi's and convert to float64 for linalg module
-    for i in range(npart):
-        psi_k_at_l[i, :] /= omega[i]
+    for k in range(npart):
+        psi_k_at_l[:, k] /= omega[k]
     psi_k_at_l = np.float64(psi_k_at_l)
 
 
