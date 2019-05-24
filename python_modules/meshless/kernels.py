@@ -74,20 +74,33 @@ def W(q, h, kernel='cubic_spline'):
     #--------------------------------------
     elif kernel == 'quartic_spline':
     #--------------------------------------
-        if q < 0.2:
-            qsq = q**2
-            res =  6 * qsq * (qsq - 0.4) + 0.368
+
+        if q < 0.5:
+            res = 6*q**4 - 2.4*q**2 + 46/125
         elif q < 0.6:
-            qsq = q**2
-            res =  sigma * -4*qsq * (qsq + 1.2) + 8*q * (qsq + 0.04) + 0.352
+            res = -4*q**4 + 8*q**3 - 4.8 *q**2 + 8/25*q +44./125
         elif q < 1:
-            qsq = q**2
-            res =  qsq*(qsq + 6 - 4*(q + 1)) + 1
+            res = q**4 - 4*q**3 + 6*q**2 - 4*q + 1
         else:
             return 0
-        #  sigma = 5**6*3/(2398*pi*h**2)
-        sigma = 6.2221751104525/h**2
+
+        sigma = 5**6 * 3 / (2398 * np.pi * h**2)
         return sigma * res
+
+        #  if q < 0.2:
+        #      qsq = q**2
+        #      res =  6 * qsq * (qsq - 0.4) + 0.368
+        #  elif q < 0.6:
+        #      qsq = q**2
+        #      res =  -4*qsq * (qsq + 1.2) + 8*q * (qsq + 0.04) + 0.352
+        #  elif q < 1:
+        #      qsq = q**2
+        #      res =  qsq*(qsq + 6 - 4*(q + 1)) + 1
+        #  else:
+        #      return 0
+        #  #  sigma = 5**6*3/(2398*pi*h**2)
+        #  sigma = 6.2221751104525/h**2
+        #  return sigma * res
 
 
 
@@ -170,7 +183,7 @@ def W(q, h, kernel='cubic_spline'):
     elif kernel == 'gaussian':
     #-------------------------------------
         # gaussian without compact support
-        return 1./(np.sqrt(0.5*np.pi)*h)**3*np.exp(-2*q**2)
+        return 1./(np.sqrt(np.pi))**3/h**2*np.exp(-q**2)
 
 
 

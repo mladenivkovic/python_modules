@@ -10,7 +10,7 @@ import numpy as np
 
 
 #===============================
-def find_index(x, y, h, pcoord):
+def find_index(x, y, pcoord):
 #===============================
     """
     Find the index in the read-in arrays where
@@ -44,39 +44,50 @@ def find_neighbours(ind, x, y, h, fact=1, L=1, periodic=True):
     returns list of neighbour indices in x,y,h array
     """
 
-    x0 = x[ind]
-    y0 = y[ind]
-    fhsq = h[ind]*h[ind]*fact*fact
-    neigh = [None for i in x]
+    
 
-    Lhalf = 0.5*L
+    # None for Gaussian
+    if fact is not None:
 
-    j = 0
-    for i in range(x.shape[0]):
-        if i==ind:
-            continue
+        x0 = x[ind]
+        y0 = y[ind]
+        fhsq = h[ind]*h[ind]*fact*fact
+        neigh = [None for i in x]
 
-        dx = x[i] - x0
-        dy = y[i] - y0
+        Lhalf = 0.5*L
 
-        if periodic:
-            if dx > Lhalf:
-                dx -= L
-            if dx < -Lhalf:
-                dx += L
+        j = 0
+        for i in range(x.shape[0]):
+            if i==ind:
+                continue
 
-            if dy > Lhalf:
-                dy -= L
-            if dy < -Lhalf:
-                dy += L
+            dx = x[i] - x0
+            dy = y[i] - y0
 
-        dist = dx**2 + dy**2 
-        if dist < fhsq:
-            neigh[j] = i
-            j+=1
+            if periodic:
+                if dx > Lhalf:
+                    dx -= L
+                if dx < -Lhalf:
+                    dx += L
+
+                if dy > Lhalf:
+                    dy -= L
+                if dy < -Lhalf:
+                    dy += L
+
+            dist = dx**2 + dy**2 
+            if dist < fhsq:
+                neigh[j] = i
+                j+=1
+
+        return neigh[:j]
+
+    else:
+        neigh = [i for i in range(x.shape[0])] 
+        neigh.remove(ind)
+        return neigh
 
 
-    return neigh[:j]
 
 
 
@@ -96,64 +107,72 @@ def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1, L=1, periodic=True):
     """
 
 
-    neigh = [None for i in x]
-    j = 0
+    # None for Gaussian
+    if fact is not None:
+        neigh = [None for i in x]
+        j = 0
 
-    Lhalf = 0.5*L
+        Lhalf = 0.5*L
 
 
-    if isinstance(h, np.ndarray):
-        fsq = fact*fact
+        if isinstance(h, np.ndarray):
+            fsq = fact*fact
 
-        for i in range(x.shape[0]):
+            for i in range(x.shape[0]):
 
-            dx = x[i] - x0
-            dy = y[i] - y0
+                dx = x[i] - x0
+                dy = y[i] - y0
 
-            if periodic:
-                if dx > Lhalf:
-                    dx -= L
-                if dx < -Lhalf:
-                    dx += L
+                if periodic:
+                    if dx > Lhalf:
+                        dx -= L
+                    if dx < -Lhalf:
+                        dx += L
 
-                if dy > Lhalf:
-                    dy -= L
-                if dy < -Lhalf:
-                    dy += L
+                    if dy > Lhalf:
+                        dy -= L
+                    if dy < -Lhalf:
+                        dy += L
 
-            dist = dx**2 + dy**2
+                dist = dx**2 + dy**2
 
-            fhsq = h[i]*h[i]*fsq
-            if dist < fhsq:
-                neigh[j]=i
-                j+=1
+                fhsq = h[i]*h[i]*fsq
+                if dist < fhsq:
+                    neigh[j]=i
+                    j+=1
+
+        else:
+            fhsq = fact*fact*h*h
+            for i in range(x.shape[0]):
+
+                dx = x[i] - x0
+                dy = y[i] - y0
+
+                if periodic:
+                    if dx > Lhalf:
+                        dx -= L
+                    if dx < -Lhalf:
+                        dx += L
+
+                    if dy > Lhalf:
+                        dy -= L
+                    if dy < -Lhalf:
+                        dy += L
+
+                dist = dx**2 + dy**2
+
+                if dist < fhsq:
+                    neigh[j] = i
+                    j+=1
+
+
+        return neigh[:j]
 
     else:
-        fhsq = fact*fact*h*h
-        for i in range(x.shape[0]):
-
-            dx = x[i] - x0
-            dy = y[i] - y0
-
-            if periodic:
-                if dx > Lhalf:
-                    dx -= L
-                if dx < -Lhalf:
-                    dx += L
-
-                if dy > Lhalf:
-                    dy -= L
-                if dy < -Lhalf:
-                    dy += L
-
-            dist = dx**2 + dy**2
-
-            if dist < fhsq:
-                neigh[j] = i
-                j+=1
+        neigh = [i for i in range(x.shape[0])] 
+        return neigh
 
 
-    return neigh[:j]
 
 
 
@@ -173,6 +192,10 @@ def V(ind, m, rho):
 
 
 
+
+
+
+
 #======================================
 def find_central_particle(L, ids):
 #======================================
@@ -187,6 +210,10 @@ def find_central_particle(L, ids):
     return cind
 
 
+
+
+
+
 #======================================
 def find_added_particle(ids):
 #======================================
@@ -198,3 +225,6 @@ def find_added_particle(ids):
     pind = np.asscalar(np.where(ids==pid)[0])
 
     return pind
+
+
+

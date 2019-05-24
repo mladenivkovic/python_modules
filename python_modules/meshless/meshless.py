@@ -22,10 +22,14 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
 #==========================================================================
     """
     Compute A_ij as defined by Hopkins 2015
-    pind: particle index for which to work with. (The i in A_ij) 
-    x, y, h, m: full data arrays as read in from hdf5 file
-    kernel: which kernel to use
-    fact:   factor for h for limit of neighbour search; neighbours are closer than fact*h
+    pind:           particle index for which to work with. (The i in A_ij) 
+    x, y, m, rho:   full data arrays as read in from hdf5 file
+    h:              kernel support radius array
+    kernel:         which kernel to use
+    fact:           factor for h for limit of neighbour search; neighbours are closer than fact*h
+
+    returns:
+        A_ij: array of A_ij, containing x and y component for every neighbour j of particle i
     """
 
     debug = False
@@ -119,10 +123,14 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
 #==========================================================================
     """
     Compute A_ij as defined by Ivanova 2013
-    pind: particle index for which to work for (The i in A_ij)
-    x, y, h, m, rho: full data arrays as read in from hdf5 file
-    kernel: which kernel to use
-    fact:   factor for h for limit of neighbour search; neighbours are closer than fact*h
+    pind:           particle index for which to work for (The i in A_ij)
+    x, y, m, rho:   full data arrays as read in from hdf5 file
+    h:              kernel support radius array
+    kernel:         which kernel to use
+    fact:           factor for h for limit of neighbour search; neighbours are closer than fact*h
+
+    returns:
+        A_ij: array of A_ij, containing x and y component for every neighbour j of particle i
     """
 
 
@@ -233,12 +241,27 @@ def Integrand_Aij_Ivanova(iind, jind, xx, yy, hh, x, y, h, m, rho, kernel='cubic
 
     (Note that this should be integrated to get the proper effective surface)
 
-    A_ij    = psi_j(x) \nabla psi_i(x) - psi_i (x) \nabla psi_j(x)
-            = sum_k [ psi_j(x_k) psi_i(x) - psi_i(x_k) psi_j(x) ] * psi_tilde_k(x)
-            = psi_i(x) * sum_k psi_j(x_k) * psi_tilde_k(x) - psi_j(x) * sum_k psi_i(x_k) * psi_tilde_k(x)
+    integrand A_ij  = psi_j(x) \nabla psi_i(x) - psi_i (x) \nabla psi_j(x)
+                    = sum_k [ psi_j(x_k) psi_i(x) - psi_i(x_k) psi_j(x) ] * psi_tilde_k(x)
+                    = psi_i(x) * sum_k psi_j(x_k) * psi_tilde_k(x) - psi_j(x) * sum_k psi_i(x_k) * psi_tilde_k(x)
     
     The last line is what is actually computed here, with the expression for the gradient
     inserted.
+
+
+    iind, jind:     particle index for which to work for (The i and j in A_ij)
+    xx, yy:         position at which to evaluate
+    hh:             kernel support radius at xx, yy
+    x, y, m, rho:   full data arrays as read in from hdf5 file
+    h:              kernel support radius array
+    kernel:         which kernel to use
+    fact:           factor for h for limit of neighbour search; neighbours are closer than fact*h
+
+    returns:
+        A_ij: array of integrands A_ij, containing x and y component for every neighbour j of particle i
+  
+
+
     """
 
     nbors = find_neighbours_arbitrary_x(xx, yy, x, y, h, fact)
@@ -483,8 +506,15 @@ def get_matrix(xi, yi, xj, yj, psi_j):
           
     E = np.matrix([[E00, E01], [E01, E11]])
 
-    B = E.getI()
-    return B
+    try:
+        return E.getI()
+    except np.linalg.LinAlgError:
+        print("Exception: Singular Matrix")
+        print("E:", E)
+        print("dx:", xj - xi)
+        print("dy:", yj - yi)
+        print("psi:", psi_j)
+        quit(2)
 
 
 
