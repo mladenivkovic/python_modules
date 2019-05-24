@@ -46,8 +46,6 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
     # compute psi_j(x_i)
     psi_j = compute_psi(x[pind], y[pind], xj, yj, h[pind], kernel)
 
-    if debug:
-        print("unnormalized psi_j:", psi_j)
 
     # normalize psi_j
     omega_xi =  (np.sum(psi_j) + psi_null)
@@ -63,8 +61,6 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
         dx = np.array([xj[i]-x[pind], yj[i]-y[pind]])
         psi_tilde_j[i] = np.dot(B_i, dx) * psi_j[i]
 
-    if debug:
-        print('psi_tilde_j', psi_tilde_j)
 
 
 
@@ -87,13 +83,9 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
     
         omega_xj = (np.sum(psi_k) + psi_null)
 
-        Vk = V(n, m, rho)
-        print(1/omega_xj, Vk, (1/omega_xj-Vk)/Vk)
-
         psi_i[i]/= omega_xj
         psi_k /= omega_xj
         psi_k = np.float64(psi_k)
-
 
         # now compute B_j^{\alpha \beta}
         B_j = get_matrix(x[n], y[n], xk, yk, psi_k)
@@ -102,10 +94,6 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
         dx = np.array([x[pind]-x[n], y[pind]-y[n]])
         psi_tilde_i[i] = np.dot(B_j, dx) * np.float64(psi_i[i])
 
-
-    if debug:
-        print("unnormalized psi_i:", psi_i)
-        print("psi_tilde_i", psi_tilde_i)
 
 
     #-------------------------------
@@ -116,14 +104,6 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
 
     for i,n in enumerate(nbors):
         A_ij[i] = V(pind, m, rho)*psi_tilde_j[i] - V(n, m, rho)*psi_tilde_i[i]
-
-    if debug:
-        print("neighbour volumes")
-        for n in nbors:
-            print(V(n, m, rho), end=' ')
-        print()
-        print("particle volume estimate:", 1.0/(np.sum(psi_j)+psi_null))
-
 
 
     return A_ij
@@ -180,17 +160,6 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
 
 
 
-    #  f = open('omegas.txt', 'w')
-    #  print("omega shape", omega.shape)
-    #  for k in range(npart):
-    #      line = ""
-    #      for l in range(npart):
-    #          line+='{0:8.6f} '.format(omega[k,l])
-    #      line += ("\n")
-    #      f.write(line)
-    #  f.close()
-
-    
     # normalize psi's and convert to float64 for linalg module
     for i in range(npart):
         psi_k_at_l[i, :] /= omega[i]
@@ -228,7 +197,6 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
             psi_i_xk = psi_k_at_l[pind, k]
             psi_j_xk = psi_k_at_l[j, k]
             Vk = V(k, m, rho) 
-            print(1/omega[k], Vk, (1/omega[k]-Vk)/Vk)
             temp = np.array([0.0,0.0])
             for l in range(npart):
                 psi_i_xl = psi_k_at_l[pind, l]

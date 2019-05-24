@@ -24,9 +24,6 @@ def find_index(x, y, h, pcoord):
             pind = i
             break
 
-    print("got pind", pind, 'with x=', x[pind], 'y=', y[pind], 'h=', h[pind])
- 
-
     return pind
 
 

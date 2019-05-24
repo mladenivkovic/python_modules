@@ -8,33 +8,25 @@ import numpy as np
 
 
 # Names of all available kernels
-kernels = ['cubic_spline', 'quintic_spline', 
-        'gaussian', 'gaussian_compact', 'supergaussian',
-        'wendland_C2', 'wendland_C4', 'wendland_C6']
+kernels = [ 'cubic_spline', 'quartic_spline',   'quintic_spline', 
+            'wendland_C2',  'wendland_C4',      'wendland_C6',
+            'gaussian']
 
 # factors of all kernels for which fact*H = 0
-kernelfacts = [2, 2,
-        1000, 2, 2,
-        2, 2, 2]
+kernelfacts = [ 1, 1, 1,
+                1, 1, 1, 
+                None]
 
-kernels_shortlist = ['cubic_spline', 'quintic_spline',
-        'wendland_C2', 'wendland_C4', 'wendland_C6']
-
-kernel_shortlist_facts = [2, 2,
-        2, 2, 2]
-
-kernel_shortlist_H_over_h = [1.778002, 2.158131,
-        1.897367, 2.171239, 2.415230]
-
+kernel_H_over_h = [1.778002, 1.977173, 2.158131,
+                   1.897367, 2.171239, 2.415230,
+                   1000]
 
 
 kernel_H_over_h_dict = {}
-for kernel in kernels:
-    if kernel in kernels_shortlist:
-        kernel_H_over_h_dict[kernel] = kernel_shortlist_H_over_h[kernels_shortlist.index(kernel)]
-        print('added', kernel)
-    else:
-        kernel_H_over_h_dict[kernel] = 1
+for i,kernel in enumerate(kernels):
+    kernel_H_over_h_dict[kernel] = kernel_H_over_h[i]
+
+
 
 
 
@@ -45,48 +37,96 @@ def W(q, h, kernel='cubic_spline'):
     """
     Various kernels
 
-    q: del x / h
+    q: dx / h
     h: compact support radius, not smoothing length!
+
+    kernels are scaled such that W(q > 1) = 0
 
     Currently implemented:
         cubic_spline, 
         quintic_spline, 
-        gaussian, 
-        gaussian_compact, 
-        supergaussian,
         wendland_C2, 
         wendland_C4, 
-        wendland_C6
+        wendland_C6,
+        gaussian (no compact support)
     """ 
     #  https://pysph.readthedocs.io/en/latest/reference/kernels.html#liu2010
 
-    # convert compact support radius to smoothing length
-    h /= kernel_H_over_h_dict[kernel]
 
+
+    #--------------------------------------
     if kernel == 'cubic_spline': 
-
-        sigma = 10./(7*np.pi*h**2)
-        if q < 1:
-            return 1. - q*q * (1.5 - 0.75*q) 
-        elif q < 2:
-            return 0.25*(2-q)**3
+    #--------------------------------------
+        if q < 0.5:
+            res =  3 * q**2 * (q - 1) + 0.5
+        elif q < 1:
+            res =  q * (q * (3 - q) - 3) + 1
         else:
             return 0
+ 
+        #  sigma = 80./(7*pi*h**2)
+        sigma = 3.63782727067189/h**2
+        return sigma*res
 
 
 
 
+    #--------------------------------------
+    elif kernel == 'quartic_spline':
+    #--------------------------------------
+        if q < 0.2:
+            qsq = q**2
+            res =  6 * qsq * (qsq - 0.4) + 0.368
+        elif q < 0.6:
+            qsq = q**2
+            res =  sigma * -4*qsq * (qsq + 1.2) + 8*q * (qsq + 0.04) + 0.352
+        elif q < 1:
+            qsq = q**2
+            res =  qsq*(qsq + 6 - 4*(q + 1)) + 1
+        else:
+            return 0
+        #  sigma = 5**6*3/(2398*pi*h**2)
+        sigma = 6.2221751104525/h**2
+        return sigma * res
+
+
+
+
+    #---------------------------------------
     elif kernel == 'quintic_spline':
-        # re-scale to H = 3
-        q = 1.5*q
-        sigma = 9.0/4.0 * 7.0/(478*np.pi*h*h)
+    #---------------------------------------
+        if q < 0.333333333333:
+            q4 = q**4
+            res = 10 * (q**4 * (1 - q) - 0.2222222222*q**2) + 0.2682926829268
+        elif q<0.666666666666:
+            qsq = q**2
+            q4 = qsq**2
+            res = 5 * (q4 * (q - 3) + qsq * (3.333333333333333*q - 1.5555555555555) + 0.18518518518518517*q) + 0.20987654320987653
+        elif q<1:
+            qsq = q**2
+            res = qsq*(qsq*(5 - q) + 10*(1 - q) ) - 5*q + 1
+        else:
+            return 0
+
+        #  sigma = 3**7*7/(478*pi)/h**2
+        sigma = 10.1945733213130/h**2
+        return res * sigma
+
+
+
+
+
+
+
+    #-------------------------------------
+    elif kernel == 'wendland_C2':
+    #-------------------------------------
 
         if q < 1:
-            return sigma * ((3-q)**5 - 6*(2-q)**5 + 15*(1-q)**5)
-        elif q<2:
-            return sigma * ((3-q)**5 - 6*(2-q)**5)
-        elif q<3:
-            return sigma * ((3-q)**5)
+            #  sigma = 7/(np.pi * h**2)
+            sigma =2.228169203286535/h**2
+            qsq = q**2
+            return sigma * ( qsq*(qsq*(4*q - 15) + 10*(2*q - 1)) + 1 )
         else:
             return 0
 
@@ -94,77 +134,74 @@ def W(q, h, kernel='cubic_spline'):
 
 
 
+    #-------------------------------------
+    elif kernel == 'wendland_C4':
+    #-------------------------------------
+
+        if q < 1:
+            #  sigma = 9/(np.pi*h**2)
+            sigma = 2.864788975654116/h**2
+            qsq = q**2
+            q4 = qsq**2
+
+            return sigma*( 11.666666666666666*q4*q4 - 64*q4*qsq*q  + 140 * qsq * q4 - 149.3333333333333 * q4 * q + 70*q4 - 9.33333333333333*qsq + 1  ) 
+        else:
+            return 0
+
+
+
+
+
+    #-------------------------------------
+    elif kernel == 'wendland_C6':
+    #-------------------------------------
+        
+        if q < 1:
+            #  sigma = 78/(7*np.pi*h**2)
+            sigma = 3.546881588905096/h**2
+            return sigma * ( 32*q**11 - 231*q**10 + 704*q**9 - 1155*q**8 + 1056*q**7 - 462*q**6 + 66*q**4 - 11*q**2 + 1 )
+        else:
+            return 0
+
+
+
+
+    #-------------------------------------
     elif kernel == 'gaussian':
+    #-------------------------------------
         # gaussian without compact support
         return 1./(np.sqrt(0.5*np.pi)*h)**3*np.exp(-2*q**2)
 
-   
 
 
+    #=================================
+    # Old and unused and unscaled
+    #=================================
 
-    elif kernel == 'gaussian_compact':
-        # gaussian with compact support
-        # re-scale to H = 3
-        q = 1.5*q
-
-        sigma = 1./(np.pi*h*h)
-
-        if q <= 3:
-            return sigma * np.exp(-q**2)
-        else:
-            return 0
-
-
-
-
-    elif kernel == 'supergaussian':
-        # re-scale to H = 3
-        q = 1.5*q
-
-        if q <= 3:
-            sigma = 1./(np.sqrt(np.pi)*h)**3
-            return sigma * np.exp(-q**2)*(2.5 - q**2)
-        else:
-            return 0
-
-
-
-
-
-    elif kernel == 'wendland_C2':
-
-        if q <= 2:
-            sigma = 7/(4*np.pi * h**2)
-            return sigma * (1 - 0.5*q)**4*(2*q+1)
-        else:
-            return 0
-
-
-
-
-
-    elif kernel == 'wendland_C4':
-
-        if q <= 2:
-            sigma = 9/(4*np.pi*h**2)
-            return sigma*(1-0.5*q)**6 * (35/12*q**2 + 3*q + 1)
-        else:
-            return 0
-
-
-
-
-
-
-    elif kernel == 'wendland_C6':
-        
-        if q <= 2:
-            sigma = 78/(28*np.pi*h**2)
-            return sigma * (1 - 0.5*q)**8*(4*q**3 + 6.25*q**2 + 4*q + 1)
-        else:
-            return 0
-
-
+    #  elif kernel == 'gaussian_compact':
+    #      # gaussian with compact support
+    #      # re-scale to H = 3
+    #      q = 1.5*q
+    #
+    #      sigma = 1./(np.pi*h*h)
+    #
+    #      if q <= 3:
+    #          return sigma * np.exp(-q**2)
+    #      else:
+    #          return 0
+    #
+    #
+    #
+    #
+    #  elif kernel == 'supergaussian':
+    #      # re-scale to H = 3
+    #      q = 1.5*q
+    #
+    #      if q <= 3:
+    #          sigma = 1./(np.sqrt(np.pi)*h)**3
+    #          return sigma * np.exp(-q**2)*(2.5 - q**2)
+    #      else:
+    #          return 0
 
 
 
@@ -188,7 +225,7 @@ def get_H(h, kernel='cubic_spline'):
     <= 2H.
     """
     
-    fact = 0.5 * kernel_shortlist_H_over_h[kernels_shortlist.index(kernel)]
+    fact = kernel_H_over_h_dict[kernel]
 
     H = fact * h
 
