@@ -18,7 +18,7 @@ import numpy as np
 
 
 #==========================================================================
-def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
+def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
 #==========================================================================
     """
     Compute A_ij as defined by Hopkins 2015
@@ -115,7 +115,7 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
 
 
 #==========================================================================
-def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
+def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
 #==========================================================================
     """
     Compute A_ij as defined by Ivanova 2013
@@ -225,7 +225,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=2):
 
 
 #=======================================================================================================
-def Integrand_Aij_Ivanova(iind, jind, xx, yy, hh, x, y, h, m, rho, kernel='cubic_spline', fact=2):
+def Integrand_Aij_Ivanova(iind, jind, xx, yy, hh, x, y, h, m, rho, kernel='cubic_spline', fact=1):
 #=======================================================================================================
     """
     Compute the effective area integrand for the particles iind jind at
@@ -491,7 +491,7 @@ def get_matrix(xi, yi, xj, yj, psi_j):
 
 
 #========================================================
-def h_of_x(xx, yy, x, y, h, m, rho, kernel='cubic_spline', fact=2):
+def h_of_x(xx, yy, x, y, h, m, rho, kernel='cubic_spline', fact=1):
 #========================================================
     """
     Compute h(x) at position (xx, yy), where there is 

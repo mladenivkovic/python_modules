@@ -31,7 +31,7 @@ def find_index(x, y, h, pcoord):
 
 
 #================================================================
-def find_neighbours(ind, x, y, h, fact=2, L=1, periodic=True):
+def find_neighbours(ind, x, y, h, fact=1, L=1, periodic=True):
 #================================================================
     """
     Find indices of all neighbours of a particle with index ind
@@ -82,7 +82,7 @@ def find_neighbours(ind, x, y, h, fact=2, L=1, periodic=True):
 
 
 #=================================================================================
-def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=2, L=1, periodic=True):
+def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1, L=1, periodic=True):
 #=================================================================================
     """
     Find indices of all neighbours around position x0, y0
