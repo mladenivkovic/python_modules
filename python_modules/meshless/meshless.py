@@ -44,15 +44,11 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
     # Part 1: For particle at x_i (Our chosen particle)
     #-------------------------------------------------------
 
-    # save and store psi(dx=0, dy=0)
-    psi_null = psi(0,0,0,0,1,kernel)
-
     # compute psi_j(x_i)
     psi_j = compute_psi(x[pind], y[pind], xj, yj, h[pind], kernel)
 
-
     # normalize psi_j
-    omega_xi =  (np.sum(psi_j) + psi_null)
+    omega_xi =  (np.sum(psi_j) + psi(0,0,0,0,h[pind],kernel))
     psi_j /= omega_xi
     psi_j = np.float64(psi_j)
 
@@ -85,7 +81,7 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
             if nn == pind: # store psi_i, which is the psi for the particle whe chose at position xj; psi_i(xj)
                 psi_i[i] = psi_k[j]
     
-        omega_xj = (np.sum(psi_k) + psi_null)
+        omega_xj = (np.sum(psi_k) + psi(0,0,0,0,h[nn],kernel))
 
         psi_i[i]/= omega_xj
         psi_k /= omega_xj
@@ -143,11 +139,9 @@ def Aij_Hopkins_v2(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
     psi_k_at_l = np.zeros((npart, npart), dtype=np.float128)
 
     for k in range(npart):
-        for l in range(k, npart):
-            # kernels are symmetric: just compute half
+        for l in range(npart):
+            # kernels are symmetric in x_i, x_j, but h can vary!!!!
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel)
-            psi_k_at_l[l,k] = psi_k_at_l[k,l]
-
 
     neighbours = [[] for i in x]
     omega = np.zeros(npart, dtype=np.float128)
@@ -159,20 +153,15 @@ def Aij_Hopkins_v2(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
 
         # compute normalisation omega for all particles
         # needs psi_k_at_l to be computed already
-        omega[l] =  np.sum(psi_k_at_l[:, l])
-        # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
-        # at this point, the psi arrays are symmetric anyway, so it doesn't actually matter
-
-
+        omega[l] = np.sum(psi_k_at_l[:, l])
+        # omega_k = sum_l W(x_k - x_l, h_k) = sum_l psi_l(x_k) as it is currently stored in memory
 
 
 
     # normalize psi's and convert to float64 for linalg module
     for k in range(npart):
-        psi_k_at_l[k, :] /= omega[k]
+        psi_k_at_l[:, k] /= omega[k]
     psi_k_at_l = np.float64(psi_k_at_l)
-
-
 
 
     # compute all matrices B_k
@@ -239,10 +228,9 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
     psi_k_at_l = np.zeros((npart, npart), dtype=np.float128)
 
     for k in range(npart):
-        for l in range(k, npart):
-            # kernels are symmetric: just compute half
+        for l in range(npart):
+            # kernels are symmetric in x_i, x_j, but h can vary!!!!
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel)
-            psi_k_at_l[l,k] = psi_k_at_l[k,l]
 
 
     neighbours = [[] for i in x]
@@ -257,17 +245,14 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
         # needs psi_k_at_l to be computed already
         omega[l] =  np.sum(psi_k_at_l[:, l])
         # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
-        # at this point, the psi arrays are symmetric anyway, so it doesn't actually matter
-
 
 
 
 
     # normalize psi's and convert to float64 for linalg module
     for k in range(npart):
-        psi_k_at_l[k, :] /= omega[k]
+        psi_k_at_l[:, k] /= omega[k]
     psi_k_at_l = np.float64(psi_k_at_l)
-
 
 
 
@@ -277,7 +262,6 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
         nbors = neighbours[k]
         # nbors now contains all neighbours l
         B_k[k] = get_matrix(x[k], y[k], x[nbors], y[nbors], psi_k_at_l[nbors, k])
-
 
 
     # compute all psi_tilde_k at every l
@@ -406,7 +390,6 @@ def Integrand_Aij_Ivanova(iind, jind, xx, yy, hh, x, y, h, m, rho, kernel='cubic
     psi_i_xk = [None for n in nbors]
     psi_j_xk = [None for n in nbors]
 
-    psi_null = psi(0, 0, 0, 0, 1, kernel)
 
     omegas = [0, 0]
     
@@ -420,7 +403,7 @@ def Integrand_Aij_Ivanova(iind, jind, xx, yy, hh, x, y, h, m, rho, kernel='cubic
         for j, nn in enumerate(nneigh):
             psi_l = compute_psi(x[n], y[n], xl, yl, h[n], kernel)
 
-        omegas[i] = np.sum(psi_l) + psi_null
+        omegas[i] = np.sum(psi_l) + psi(0, 0, 0, 0, h[iind], kernel)
 
 
     # now compute psi_i/j(x_k)
