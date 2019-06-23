@@ -216,7 +216,8 @@ def main():
 
 
     plt.tight_layout()
-    plt.savefig('check_versions.png', dpi=200)
+    #  plt.savefig('check_versions.png', dpi=200)
+    plt.show()
 
 
 
