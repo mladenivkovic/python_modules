@@ -283,9 +283,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
         for k in range(npart): 
             psi_i_xk = psi_k_at_l[pind, k]
             psi_j_xk = psi_k_at_l[j, k]
-            #  Vk = V(k, m, rho)
-            # TODO: use old version after check is done
-            Vk = 1/omega[k]
+            Vk = V(k, m, rho)
             temp = np.array([0.0,0.0])
             for l in range(npart):
                 psi_i_xl = psi_k_at_l[pind, l]
@@ -337,98 +335,28 @@ def Aij_Ivanova_Taylor(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1):
     # first index: index k of psi: psi_k(x)
     # second index: index of x_l: psi(x_l)
     psi_k_at_l = np.zeros((npart, npart), dtype=np.float128)
-    grad_psi_k_at_l = np.zeros((npart, npart, 2), dtype=np.float64)
-    grad_W_k_at_l = np.zeros((npart, npart, 2), dtype=np.float128)
-
 
     for k in range(npart):
         for l in range(npart):
             # kernels are symmetric in x_i, x_j, but h can vary!!!!
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel)
 
-            # get kernel gradients
-            #  dx = x[l]-x[k]
-            #  dy = y[l]-y[k]
-            dx = x[l]-x[k]
-            dy = y[l]-y[k]
-            r = np.sqrt(dx**2 + dy**2)
-            if r == 0:
-                grad_W_k_at_l[k, l, 0] = 0
-                grad_W_k_at_l[k, l, 1] = 0
-            else:
-                grad_W_k_at_l[k, l, 0] = dWdr(r, h[l], kernel) * dx / r
-                grad_W_k_at_l[k, l, 1] = dWdr(r, h[l], kernel) * dy / r
-
-
-
-
-    print("Gradient check")
-    print("Kernels")
-    d = 1e-10
-    #  for k in range(1):
-    for k in range(10):
-        #  k = 0
-        neighs = find_neighbours(k, x, y, h, fact=0.5)
-        l = neighs[0]
-        xk = x[k]
-        yk = y[k]
-        xl = x[l]
-        yl = y[l]
-        hl = h[l]
-        dx = xl-xk
-        dy = yl-yk
-        r = np.sqrt(dx**2 + dy**2)
-
-        if r > hl:
-            print('skipping')
-            continue
-
-        estimate_x = (psi(xl+d, yl, xk, yk, hl, kernel) - psi(xl, yl, xk, yk, hl, kernel)) / d
-        estimate_y = (psi(xl, yl+d, xk, yk, hl, kernel) - psi(xl, yl, xk, yk, hl, kernel)) / d
-        estimate_r = (psi(xl+d, yl+d, xk, yk, hl, kernel) - psi(xl, yl, xk, yk, hl, kernel)) / d
-
-        exx = dWdr(r, hl, kernel) * dx / r
-        exy = dWdr(r, hl, kernel) * dy / r
-        exr = dWdr(r, hl, kernel)
-
-        print(exx, estimate_x, estimate_r*dx/r, exx/estimate_x)
-        print(exy, estimate_y, estimate_r*dy/r, exy/estimate_y)
-        print(exr/estimate_r)
-
-        #  print(grad_W_k_at_l[l,k, 0], estimate_x, grad_W_k_at_l[l,k, 0]/estimate_x)
-        #  print(grad_W_k_at_l[l,k, 1], estimate_y, grad_W_k_at_l[l,k, 1]/estimate_y)
-        #  print(grad_W_k_at_l[k,l, 0], estimate_x, grad_W_k_at_l[k,l, 0]/estimate_x, estimate_r)
-        #  print(grad_W_k_at_l[k,l, 1], estimate_y, grad_W_k_at_l[k,l, 1]/estimate_y)
-        print()
-
-
-
 
     neighbours = [[] for i in x]
     omega = np.zeros(npart, dtype=np.float128)
-    sum_grad_W = np.zeros((npart, 2), dtype=np.float128)
 
     for l in range(npart):
 
         # find and store all neighbours;
-        neighbours[l] = find_neighbours(l, x, y, h, fact)
+        neighbours[l] = find_neighbours(l, x, y, h, fact=fact)
 
         # compute normalisation omega for all particles
         # needs psi_k_at_l to be computed already
         omega[l] =  np.sum(psi_k_at_l[:, l])
         # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
 
-        sum_grad_W[l] = np.sum(grad_W_k_at_l[:, l], axis=0)
-
-
-
-    # first finish computing the gradients: Need W(r, h), which is currently stored as psi
-    for l in range(npart):
-        #  print(psi_k_at_l[:, l])
-        grad_psi_k_at_l[:, l, 0] = grad_W_k_at_l[:, l, 0]/omega[l] - psi_k_at_l[:, l]/omega[l]**2 * sum_grad_W[l, 0]
-        grad_psi_k_at_l[:, l, 1] = grad_W_k_at_l[:, l, 1]/omega[l] - psi_k_at_l[:, l]/omega[l]**2 * sum_grad_W[l, 1]
-
-
+    grad_psi_k_at_l = get_grad_psi_k_at_l_analytical(x, y, h, omega, psi_k_at_l, 
+            kernel=kernel, fact=fact)
 
 
     # normalize psi's and convert to float64 for linalg module
@@ -490,31 +418,16 @@ def Aij_Ivanova_analytical_gradients(pind, x, y, h, m, rho, kernel='cubic_spline
     # first index: index k of psi: psi_k(x)
     # second index: index of x_l: psi(x_l)
     psi_k_at_l = np.zeros((npart, npart), dtype=np.float128)
-    grad_psi_k_at_l = np.zeros((npart, npart, 2), dtype=np.float64)
-    grad_W_k_at_l = np.zeros((npart, npart, 2), dtype=np.float128)
-
 
     for k in range(npart):
         for l in range(npart):
             # kernels are symmetric in x_i, x_j, but h can vary!!!!
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel)
 
-            # get kernel gradients
-            dx = x[l]-x[k]
-            dy = y[l]-y[k]
-            r = np.sqrt(dx**2 + dy**2)
-            if r == 0:
-                grad_W_k_at_l[k, l, 0] = 0
-                grad_W_k_at_l[k, l, 1] = 0
-            else:
-                grad_W_k_at_l[k, l, 0] = dWdr(r, h[l], kernel) * dx / r
-                grad_W_k_at_l[k, l, 1] = dWdr(r, h[l], kernel) * dy / r
-
-
-
+ 
     neighbours = [[] for i in x]
     omega = np.zeros(npart, dtype=np.float128)
-    sum_grad_W = np.zeros((npart, 2), dtype=np.float128)
+
 
     for l in range(npart):
 
@@ -526,20 +439,9 @@ def Aij_Ivanova_analytical_gradients(pind, x, y, h, m, rho, kernel='cubic_spline
         omega[l] =  np.sum(psi_k_at_l[:, l])
         # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
 
-        sum_grad_W[l] = np.sum(grad_W_k_at_l[l, :], axis=0)
-        # TODO: doublecheck again
 
-        #  print(sum_grad_W[l])
-        #  print(omega[l])
-        #  print()
-
-
-    # first finish computing the gradients: Need W(r, h), which is currently stored as psi
-    for l in range(npart):
-        #  print(psi_k_at_l[:, l])
-        grad_psi_k_at_l[:, l, 0] = grad_W_k_at_l[:, l, 0]/omega[l] - psi_k_at_l[:, l]/omega[l]**2 * sum_grad_W[l, 0]
-        grad_psi_k_at_l[:, l, 1] = grad_W_k_at_l[:, l, 1]/omega[l] - psi_k_at_l[:, l]/omega[l]**2 * sum_grad_W[l, 1]
-
+    grad_psi_k_at_l = get_grad_psi_k_at_l_analytical(x, y, h, omega, psi_k_at_l, 
+            kernel=kernel, fact=fact)
 
 
 
@@ -756,6 +658,119 @@ def x_ij(pind, x, y, h, nbors=None, which=None):
 
 
 
+#==================================================================
+def get_grad_psi_k_at_l_analytical(x, y, h, omega, psi_k_at_l, kernel='cubic_spline', fact=1, L=1):
+#==================================================================
+    """
+    Compute \nabla \psi_k (x_l) for all particles k and l 
+    x, y, h:    arrays of positions and compact support radius of all particles
+    omega:      weights; sum_j W(x - xj) for all particles x=x_k
+    psi_k_at_l: UNNORMED psi_k(x_l) npart x npart array for all k, l
+
+    returns:
+
+        grad_psi_k_at_l: npart x npart x 2 array; grad psi_k (x_l) for all k,l for both x and y direction
+    """
+
+
+
+    npart = x.shape[0]
+
+    grad_psi_k_at_l = np.zeros((npart, npart, 2), dtype=np.float128)
+    grad_W_k_at_l = np.zeros((npart, npart, 2), dtype=np.float128)
+
+
+    for k in range(npart):
+        for l in range(npart):
+            # get kernel gradients
+            dx = x[l]-x[k]
+            dy = y[l]-y[k]
+            r = np.sqrt(dx**2 + dy**2)
+            if r == 0:
+                grad_W_k_at_l[k, l, 0] = 0
+                grad_W_k_at_l[k, l, 1] = 0
+            else:
+                grad_W_k_at_l[k, l, 0] = dWdr(r/h[l], h[l], kernel) * dx / r
+                grad_W_k_at_l[k, l, 1] = dWdr(r/h[l], h[l], kernel) * dy / r
+
+
+
+    sum_grad_W = np.zeros((npart, 2), dtype=np.float128)
+
+    for l in range(npart):
+        sum_grad_W[l] = np.sum(grad_W_k_at_l[:, l], axis=0)
+
+
+    # first finish computing the gradients: Need W(r, h), which is currently stored as psi
+    for k in range(npart):
+        for l in range(npart):
+            #  grad_psi_k_at_l[k, l, 0] = grad_W_k_at_l[k, l, 0]/omega[l] #- psi_k_at_l[k, l]/omega[l]**2 * sum_grad_W[l, 0]
+            #  grad_psi_k_at_l[k, l, 1] = grad_W_k_at_l[k, l, 1]/omega[l] #- psi_k_at_l[k, l]/omega[l]**2 * sum_grad_W[l, 1]
+            grad_psi_k_at_l[k, l, 0] = grad_W_k_at_l[k, l, 0]/omega[l] - psi_k_at_l[k, l] * sum_grad_W[l, 0]/omega[l]**2
+            grad_psi_k_at_l[k, l, 1] = grad_W_k_at_l[k, l, 1]/omega[l] - psi_k_at_l[k, l] * sum_grad_W[l, 1]/omega[l]**2
+
+
+
+    # TODO: Debugging
+    print("Grad Psi")
+    for k in range(100):
+        #  k = 0
+        neighs = find_neighbours(k, x, y, h, fact=0.5)
+        l = neighs[0]
+        xk = x[k]
+        yk = y[k]
+        xl = x[l]
+        yl = y[l]
+        hl = h[l]
+        dx = xl-xk
+        dy = yl-yk
+        r = np.sqrt(dx**2 + dy**2)
+        d = np.abs(dx)/1000
+
+        if r > hl:
+            print('skipping')
+            continue
+
+        #  print("x", xk, xl, dx)
+        #  print("y", yk, yl, dy)
+        #  print('h', hl, 'r', r)
+
+
+        omega_dx = np.float128(0)
+        omega_dy = np.float128(0)
+        for n in range(npart):
+            omega_dx += psi(xl+d, yl, x[n], y[n], h[n], kernel)
+            omega_dy += psi(xl, yl+d, x[n], y[n], h[n], kernel)
+
+        #  print(omega_dx,  omega_dy, omega[l])
+        #  print(psi(xl, yl+d, xk, yk, hl, kernel, L=100) , psi(xl, yl, xk, yk, hl, kernel, L=100))
+        #  print(psi(xl, yl+d, xk, yk, hl, kernel, L=100) - psi(xl, yl, xk, yk, hl, kernel, L=100))
+
+        #  estimate_x = (psi(xl+d, yl, xk, yk, hl, kernel, L=100)0/omega_dx - psi(xl, yl, xk, yk, hl, kernel, L=100)0/omega[l]) / d
+        #  estimate_y = (psi(xl, yl+d, xk, yk, hl, kernel, L=100)0/omega_dy - psi(xl, yl, xk, yk, hl, kernel, L=100)0/omega[l]) / d
+        estimate_x = (psi(xl+d, yl, xk, yk, hl, kernel, L=100) - psi(xl, yl, xk, yk, hl, kernel, L=100)) / d
+        estimate_y = (psi(xl, yl+d, xk, yk, hl, kernel, L=100) - psi(xl, yl, xk, yk, hl, kernel, L=100)) / d
+        exx = grad_psi_k_at_l[k, l, 0] * omega[l]
+        exy = grad_psi_k_at_l[k, l, 1] * omega[l]
+        #  exx = grad_psi_k_at_l[l, k, 0]
+        #  exy = grad_psi_k_at_l[l, k, 1]
+        #  exx = dWdr(r/hl, hl, kernel) * dx / r
+        #  exy = dWdr(r/hl, hl, kernel) * dy / r
+        #  print(exx, estimate_x, exx/estimate_x)
+        #  print(exy, estimate_y, exy/estimate_y)
+        #
+        #
+       #
+    print()
+
+
+    return grad_psi_k_at_l
+
+
+
+
+
+
 
 
 
@@ -789,6 +804,9 @@ def compute_psi(xi, yi, xj, yj, h, kernel='cubic_spline'):
             psi_j[i] = psi(xi, yi, xj[i], yj[i], h, kernel)
 
     return psi_j
+
+
+
 
 
 
@@ -871,6 +889,9 @@ def get_matrix(xi, yi, xj, yj, psi_j):
         print("psi:", psi_j)
         quit(2)
 
+    return
+
+
 
 
 
@@ -881,6 +902,8 @@ def h_of_x(xx, yy, x, y, h, m, rho, kernel='cubic_spline', fact=1):
     """
     Compute h(x) at position (xx, yy), where there is 
     not necessariliy a particle
+    by approximating it as h(x) = sum_j h_j * psi_j(x)
+
     x, y, h : full particle arrays
     """
 
