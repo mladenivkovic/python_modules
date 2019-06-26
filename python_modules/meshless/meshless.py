@@ -206,9 +206,9 @@ def Aij_Hopkins_v2(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, pe
 
 
 
-#=============================================================================================
-def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodic=True):
-#=============================================================================================
+#=====================================================================================================================
+def Aij_Ivanova_approximate_gradients(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodic=True):
+#=====================================================================================================================
     """
     Compute A_ij as defined by Ivanova 2013
     pind:           particle index for which to work for (The i in A_ij)
@@ -316,7 +316,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
 
 
 #==================================================================================================
-def Aij_Ivanova_Taylor(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodic=True):
+def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodic=True):
 #==================================================================================================
     """
     Compute A_ij as defined by Ivanova 2013, using the discretization by Taylor 

@@ -51,7 +51,7 @@ ax1.legend()
 ax2.legend()
 
 
-#  plt.show()
+plt.show()
 
 
 
@@ -73,6 +73,7 @@ dy = yl-yk
 r = np.sqrt(dx**2 + dy**2)
 d = 1e-10
 
+print("Checking kernel gradients")
 print('{0:20} {1:20} {2:20} {3:20}'.format('kernel:', 'analytical', 'finite difference', 'ratio'))
 
 
@@ -89,10 +90,6 @@ for kernel in kernel_derivatives:
     print('{0:20} {1:20.6f} {2:20.6f} {3:20.6f}'.format(kernel, exx, estimate_x, exx/estimate_x))
     print('{0:20} {1:20.6f} {2:20.6f} {3:20.6f}'.format( '', exy, estimate_y, exy/estimate_y))
 
-    #  print(grad_W_k_at_l[l,k, 0], estimate_x, grad_W_k_at_l[l,k, 0]/estimate_x)
-    #  print(grad_W_k_at_l[l,k, 1], estimate_y, grad_W_k_at_l[l,k, 1]/estimate_y)
-    #  print(grad_W_k_at_l[k,l, 0], estimate_x, grad_W_k_at_l[k,l, 0]/estimate_x, estimate_r)
-    #  print(grad_W_k_at_l[k,l, 1], estimate_y, grad_W_k_at_l[k,l, 1]/estimate_y)
     print()
 
 
