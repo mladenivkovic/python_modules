@@ -25,7 +25,7 @@ def read_file(srcfile, ptype):
     try:
         # old SWIFT header versions
         h = f[ptype]['SmoothingLength'][:]
-        rho = f[ptype]['Densities'][:]
+        rho = f[ptype]['Density'][:]
     except KeyError:
         # new SWIFT header versions
         h = f[ptype]['SmoothingLengths'][:]

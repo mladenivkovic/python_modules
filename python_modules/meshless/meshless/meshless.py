@@ -9,9 +9,9 @@
 #===========================================
 
 
-from meshlessio import *
-from kernels import *
-from particles import *
+from .meshlessio import *
+from .kernels import *
+from .particles import *
 
 
 import numpy as np
