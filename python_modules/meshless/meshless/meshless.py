@@ -8,10 +8,15 @@
 #
 #===========================================
 
-
-from .meshlessio import *
-from .kernels import *
-from .particles import *
+try:
+    from .meshlessio import *
+    from .kernels import *
+    from .particles import *
+except ImportError:
+    # in case you're not using it as a package, but directly in the pythonpath
+    from meshlessio import *
+    from kernels import *
+    from particles import *
 
 
 import numpy as np
