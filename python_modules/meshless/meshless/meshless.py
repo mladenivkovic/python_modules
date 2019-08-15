@@ -60,8 +60,6 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
     psi_j /= omega_xi
     psi_j = np.atleast_1d(np.float64(psi_j))
 
-    print("PSI_J INTERMEDIATE")
-    print(psi_j)
 
     # compute B_i
     B_i = get_matrix(x[pind], y[pind], xj, yj, psi_j, L=L, periodic=periodic)
@@ -71,7 +69,6 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
     for i, n in enumerate(nbors):
         dx = np.array([xj[i]-x[pind], yj[i]-y[pind]])
         psi_tilde_j[i] = np.dot(B_i, dx) * psi_j[i]
-
 
     #---------------------------------------------------------------------------
     # Part 2: values of psi/psi_tilde of particle i at neighbour positions x_j
@@ -114,7 +111,6 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
 
     for i,n in enumerate(nbors):
         A_ij[i] = V(pind, m, rho)*psi_tilde_j[i] - V(n, m, rho)*psi_tilde_i[i]
-
 
     return A_ij
 
@@ -337,8 +333,8 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
     h:              kernel support radius array
     kernel:         which kernel to use
     fact:           factor for h for limit of neighbour search; neighbours are closer than fact*h
-    L:          boxsize
-    periodic:   whether to assume periodic boundaries
+    L:              boxsize
+    periodic:       whether to assume periodic boundaries
 
     returns:
         A_ij: array of A_ij, containing x and y component for every neighbour j of particle i
@@ -381,6 +377,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
         psi_k_at_l[:, k] /= omega[k]
     psi_k_at_l = np.float64(psi_k_at_l)
 
+    print("psi_k_at_l", psi_k_at_l)
 
     # now compute A_ij for all neighbours j of i
     nbors = neighbours[pind]
