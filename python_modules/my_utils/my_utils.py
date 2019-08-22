@@ -27,7 +27,12 @@ def yesno(*obj):
     while True:
 
         ans = input(question+' [y/n] ')
-        form_ans = ans[0].lower()
+        try:
+            form_ans = ans[0].lower()
+        except IndexError:
+            # happens for empty input
+            form_ans = None
+
         if form_ans == 'y':
             return True
         elif form_ans == 'n':
