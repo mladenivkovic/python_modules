@@ -254,14 +254,18 @@ def Aij_Ivanova_approximate_gradients(pind, x, y, h, m, rho, kernel='cubic_splin
             # kernels are symmetric in x_i, x_j, but h can vary!!!!
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel=kernel, fact=fact, L=L, periodic=periodic)
 
+        # self contribution part: k = l +> h[k] = h[l], so use h[k] here
+        psi_k_at_l[k, k] = ms.psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
+
+
+
 
     omega = np.zeros(npart, dtype=my_float)
-
 
     for l in range(npart):
         # compute normalisation omega for all particles
         # needs psi_k_at_l to be computed already
-        omega[l] =  np.sum(psi_k_at_l[:, l])
+        omega[l] =  np.sum(psi_k_at_l[neighbours[l], l]) + psi_k_at_l[l, l]
         # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
 
 
@@ -370,6 +374,9 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodi
             # kernels are symmetric in x_i, x_j, but h can vary!!!!
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel=kernel, fact=fact, L=L, periodic=periodic)
 
+        # self contribution part: k = l +> h[k] = h[l], so use h[k] here
+        psi_k_at_l[k, k] = ms.psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
+
 
     omega = np.zeros(npart, dtype=my_float)
 
@@ -377,7 +384,7 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodi
     for l in range(npart):
         # compute normalisation omega for all particles
         # needs psi_k_at_l to be computed already
-        omega[l] =  np.sum(psi_k_at_l[:, l])
+        omega[l] =  np.sum(psi_k_at_l[neighbours[l], l]) + psi_k_at_l[l, l]
         # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
 
     grad_psi_k_at_l = get_grad_psi_k_at_l_analytical(x, y, h, omega, psi_k_at_l, neighbours,
@@ -465,6 +472,9 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
             # kernels are symmetric in x_i, x_j, but h can vary!!!!
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel=kernel, fact=fact, L=L, periodic=periodic)
 
+        # self contribution part: k = l +> h[k] = h[l], so use h[k] here
+        psi_k_at_l[k, k] = ms.psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
+
 
     omega = np.zeros(npart, dtype=my_float)
 
@@ -472,7 +482,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
     for l in range(npart):
         # compute normalisation omega for all particles
         # needs psi_k_at_l to be computed already
-        omega[l] =  np.sum(psi_k_at_l[:, l])
+        omega[l] =  np.sum(psi_k_at_l[neighbours[l], l]) + psi_k_at_l[l, l]
         # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
 
     grad_psi_k_at_l = get_grad_psi_k_at_l_analytical(x, y, h, omega, psi_k_at_l, neighbours,
@@ -552,6 +562,9 @@ def Aij_Ivanova_analytical_gradients(pind, x, y, h, m, rho, kernel='cubic_spline
             # kernels are symmetric in x_i, x_j, but h can vary!!!!
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel=kernel, fact=fact, L=L, periodic=periodic)
 
+        # self contribution part: k = l +> h[k] = h[l], so use h[k] here
+        psi_k_at_l[k, k] = ms.psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
+
 
     omega = np.zeros(npart, dtype=my_float)
 
@@ -559,7 +572,7 @@ def Aij_Ivanova_analytical_gradients(pind, x, y, h, m, rho, kernel='cubic_spline
     for l in range(npart):
         # compute normalisation omega for all particles
         # needs psi_k_at_l to be computed already
-        omega[l] =  np.sum(psi_k_at_l[:, l])
+        omega[l] =  np.sum(psi_k_at_l[neighbours[l], l]) + psi_k_at_l[l, l]
         # omega_k = sum_l W(x_k - x_l) = sum_l psi_l(x_k) as it is currently stored in memory
 
 
