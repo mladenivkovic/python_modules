@@ -255,7 +255,7 @@ def Aij_Ivanova_approximate_gradients(pind, x, y, h, m, rho, kernel='cubic_splin
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel=kernel, fact=fact, L=L, periodic=periodic)
 
         # self contribution part: k = l +> h[k] = h[l], so use h[k] here
-        psi_k_at_l[k, k] = ms.psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
+        psi_k_at_l[k, k] = psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
 
 
 
@@ -375,7 +375,7 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodi
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel=kernel, fact=fact, L=L, periodic=periodic)
 
         # self contribution part: k = l +> h[k] = h[l], so use h[k] here
-        psi_k_at_l[k, k] = ms.psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
+        psi_k_at_l[k, k] = psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
 
 
     omega = np.zeros(npart, dtype=my_float)
@@ -473,7 +473,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel=kernel, fact=fact, L=L, periodic=periodic)
 
         # self contribution part: k = l +> h[k] = h[l], so use h[k] here
-        psi_k_at_l[k, k] = ms.psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
+        psi_k_at_l[k, k] = psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
 
 
     omega = np.zeros(npart, dtype=my_float)
@@ -563,7 +563,7 @@ def Aij_Ivanova_analytical_gradients(pind, x, y, h, m, rho, kernel='cubic_spline
             psi_k_at_l[k,l] = psi(x[l], y[l], x[k], y[k], h[l], kernel=kernel, fact=fact, L=L, periodic=periodic)
 
         # self contribution part: k = l +> h[k] = h[l], so use h[k] here
-        psi_k_at_l[k, k] = ms.psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
+        psi_k_at_l[k, k] = psi(0, 0, 0, 0, h[k], kernel=kernel, fact=fact, L=L, periodic=periodic) 
 
 
     omega = np.zeros(npart, dtype=my_float)

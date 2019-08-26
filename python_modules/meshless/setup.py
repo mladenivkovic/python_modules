@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
         name='Meshless Effective Surfaces',
-        version='0.1.5',
+        version='0.1.6',
         author='Mladen Ivkovic',
         author_email='mladen.ivkovic@hotmail.com',
         packages=['meshless'],
