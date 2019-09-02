@@ -21,8 +21,8 @@ except ImportError:
 
 import numpy as np
 
-my_float = np.float
-#  float_type_in_use = my_float
+# define global float precision here
+my_float = np.float64
 
 
 #===========================================================================================
@@ -62,7 +62,7 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
     omega_xi =  (np.sum(psi_j) + psi(0,0,0,0,h[pind],kernel))
     psi_j /= omega_xi
     if my_float != np.float:
-        psi_j = np.atleast_1d(np.float(psi_j))
+        psi_j = np.atleast_1d(psi_j.astype(np.float))
     else:
         psi_j = np.atleast_1d(psi_j)
 
@@ -98,7 +98,7 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
         psi_i[i]/= omega_xj
         psi_k /= omega_xj
         if my_float != np.float:
-            psi_k = np.float(psi_k)
+            psi_k = psi_k.astype(np.float)
 
         # now compute B_j^{\alpha \beta}
         B_j = get_matrix(x[n], y[n], xk, yk, psi_k, L=L, periodic=periodic)
@@ -177,7 +177,7 @@ def Aij_Hopkins_v2(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, pe
     for k in range(npart):
         psi_k_at_l[:, k] /= omega[k]
     if my_float != np.float:
-        psi_k_at_l = np.float(psi_k_at_l)
+        psi_k_at_l = psi_k_at_l.astype(np.float)
 
 
     # compute all matrices B_k
@@ -274,7 +274,7 @@ def Aij_Ivanova_approximate_gradients(pind, x, y, h, m, rho, kernel='cubic_splin
     for k in range(npart):
         psi_k_at_l[:, k] /= omega[k]
     if my_float != np.float:
-        psi_k_at_l = np.float(psi_k_at_l)
+        psi_k_at_l = psi_k_at_l.astype(np.float)
 
 
 
@@ -396,7 +396,7 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodi
     for k in range(npart):
         psi_k_at_l[:, k] /= omega[k]
     if my_float != np.float:
-        psi_k_at_l = np.float(psi_k_at_l)
+        psi_k_at_l = psi_k_at_l.astype(np.float)
 
 
     maxn = max([len(n) for n in neighbours])
@@ -493,7 +493,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
     for k in range(npart):
         psi_k_at_l[:, k] /= omega[k]
     if my_float != np.float:
-        psi_k_at_l = np.float(psi_k_at_l)
+        psi_k_at_l = psi_k_at_l.astype(np.float)
 
     # now compute A_ij for all neighbours j of i
     nbors = neighbours[pind]
@@ -585,7 +585,7 @@ def Aij_Ivanova_analytical_gradients(pind, x, y, h, m, rho, kernel='cubic_spline
     for k in range(npart):
         psi_k_at_l[:, k] /= omega[k]
     if my_float != np.float:
-        psi_k_at_l = np.float(psi_k_at_l)
+        psi_k_at_l = psi_k_at_l.astype(np.float)
 
 
     # now compute A_ij for all neighbours j of i
@@ -676,7 +676,7 @@ def Integrand_Aij_Ivanova(iind, jind, xx, yy, hh, x, y, h, m, rho, kernel='cubic
     omega = np.sum(psi_x)
     psi_x /= omega
     if my_float != np.float:
-        psi_x = np.float(psi_x)
+        psi_x = psi_x.astype(np.float)
 
     # find where psi_i and psi_j are in that array
     try:
@@ -826,25 +826,30 @@ def get_grad_psi_k_at_l_analytical(x, y, h, omega, psi_k_at_l, neighbours, kerne
 
 
     for k in range(npart):
-        for l in neighbours[k]:
+        for l in range(npart):
+        #  for l in neighbours[k]:
             # get kernel gradients
 
             dx, dy = get_dx(x[l], x[k], y[l], y[k], L=L, periodic=periodic)
 
             r = np.sqrt(dx**2 + dy**2)
-            if r == 0:
-                grad_W_k_at_l[k, l, 0] = 0
-                grad_W_k_at_l[k, l, 1] = 0
-            else:
-                grad_W_k_at_l[k, l, 0] = dWdr(r/h[l], h[l], kernel) * dx / r
-                grad_W_k_at_l[k, l, 1] = dWdr(r/h[l], h[l], kernel) * dy / r
+            if r != 0:
+                dwdr = dWdr(r/h[l], h[l], kernel)
+                grad_W_k_at_l[k, l, 0] = dwdr * dx / r
+                grad_W_k_at_l[k, l, 1] = dwdr * dy / r
+            #  else:
+            #      # It's initiated as zeroes anyhow
+            #      grad_W_k_at_l[k, l, 0] = 0
+            #      grad_W_k_at_l[k, l, 1] = 0
 
 
 
     sum_grad_W = np.zeros((npart, 2), dtype=my_float)
 
     for l in range(npart):
-        sum_grad_W[l] = np.sum(grad_W_k_at_l[neighbours[l], l], axis=0)
+        #  sum_grad_W[l] = np.sum(grad_W_k_at_l[l, :], axis=0)
+        sum_grad_W[l] = np.sum(grad_W_k_at_l[l, neighbours[l]], axis=0)
+        # you can skip the self contribution here, the gradient at r = 0 is 0
 
 
     # first finish computing the gradients: Need W(r, h), which is currently stored as psi
