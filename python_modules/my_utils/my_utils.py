@@ -42,3 +42,23 @@ def yesno(*obj):
 
 
     return
+
+
+
+
+#===================================
+def one_arg_present(default=None):
+#===================================
+    """
+    Checks if there is exactly one cmd line arg present.
+    If it is, it will be the return value.
+    Otherwise, the 'default' parameter will be returned.
+    """
+
+    import sys
+
+    if len(sys.argv) > 1:
+        return sys.argv[1]
+    else:
+        return default
+    
