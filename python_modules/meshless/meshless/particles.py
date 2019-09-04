@@ -225,8 +225,6 @@ def get_dx(x1, x2, y1, y2, L=1, periodic=True):
     periodic:   whether to assume periodic boundaries
     """
 
-    #  dx = x - xi
-    #  dy = y - yi
     dx = x1 - x2
     dy = y1 - y2
 
