@@ -33,6 +33,9 @@ def find_index(x, y, pcoord, tolerance=1e-3):
 
 
 
+
+
+
 #===============================================
 def find_index_by_id( ids, id_to_look_for ):
 #===============================================
@@ -51,6 +54,9 @@ def find_index_by_id( ids, id_to_look_for ):
     pind = np.asscalar(np.where(ids==id_to_look_for)[0])
 
     return pind
+
+
+
 
 
 
@@ -98,6 +104,9 @@ def find_neighbours(ind, x, y, h, fact=1, L=1, periodic=True):
         neigh = [i for i in range(x.shape[0])] 
         neigh.remove(ind)
         return neigh
+
+
+
 
 
 
@@ -215,6 +224,9 @@ def find_added_particle(ids):
 
 
 
+
+
+
 #=====================================================
 def get_dx(x1, x2, y1, y2, L=1, periodic=True):
 #=====================================================
@@ -244,3 +256,98 @@ def get_dx(x1, x2, y1, y2, L=1, periodic=True):
 
 
     return dx, dy
+
+
+
+
+
+
+
+
+#========================================================================
+def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1, periodic=True):
+#========================================================================
+    """
+    Gets all the neighbour data for all particles ready.
+    x, y, h:    arrays of positions/h of all particles
+    fact:       kernel support radius factor: W = 0 for r > fact*h
+    L:          boxsize
+    periodic:   Whether you assume periodic boundary conditions
+
+    returns neighbour_data object:
+        self.neighbours :   List of lists of every neighbour of every particle
+        self.maxneigh :     Highest number of neighbours
+        self.nneigh:        integer array of number of neighbours for every particle
+        self.iinds:         iinds[i, j] = which index does particle i have in the neighbour
+                            list of particle j, where j is the j-th neighbour of i
+                            Due to different smoothing lengths, particle j can be the
+                            neighbour of i, but i not the neighbour of j. In that case
+                            iinds[i, j] = -1 and 
+                            iinds[neighbours[i][j], neighbours[j].index(i)] >= 0
+
+    """
+
+
+    npart = x.shape[0]
+
+    # find and store all neighbours;
+    neighbours = [[] for i in x]
+    for i in range(npart):
+        neighbours[i] = find_neighbours(i, x, y, h, fact=fact, L=L, periodic=periodic)
+
+
+    # get neighbour counts array
+    nneigh = np.zeros((npart), dtype=np.int)
+    for i in range(npart):
+        nneigh[i] = len(neighbours[i])
+
+    
+    # max number of neighbours; needed for array allocation
+    maxneigh = nneigh.max()
+
+
+    # store the index of particle i when required as the neighbour of particle j in arrays[npart, maxneigh]
+    # i.e. find index 0 <= i < maxneigh for ever j
+    iinds = np.zeros((npart, maxneigh), dtype=np.int) 
+
+    for i in range(npart):
+        for jc,j in enumerate(neighbours[i]):
+
+            try:
+                iinds[i, jc] = (neighbours[j]).index(i)
+            except ValueError:
+                # it is possible that j is a neighbour for i, but i is not a neighbour
+                # for j depending on their respective smoothing lengths
+                dx, dy = get_dx(x[i], x[j], y[i], y[j], L=L, periodic=periodic)
+                r = np.sqrt(dx**2 + dy**2)
+                if r/h[j] < 1:
+                    print("something went wrong when computing gradients.")
+                    print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r/h[j])
+                    print("neighbours i:", neighbours[i])
+                    print("neighbours j:", neighbours[j])
+                    print("couldn't find i as neighbour of j")
+                    print("exiting")
+                    quit()
+                else:
+                    iinds[i, jc] = -1
+                    continue
+
+    #  print("iinds[25, 10]", iinds[25, 10], neighbours[3][10])
+    #  print(neighbours[25])
+    #  print()
+
+
+    class neighbour_data:
+        def __init__(self, neighbours=None, maxneigh=None, nneigh=None, iinds=None):
+            self.neighbours = neighbours
+            self.maxneigh = maxneigh
+            self.nneigh = nneigh
+            self.iinds = iinds
+
+    nd = neighbour_data(neighbours=neighbours,
+                        maxneigh=maxneigh,
+                        nneigh=nneigh,
+                        iinds=iinds) 
+
+
+    return nd
