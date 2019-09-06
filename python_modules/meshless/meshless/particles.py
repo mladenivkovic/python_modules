@@ -281,9 +281,8 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1, periodic=True):
         self.iinds:         iinds[i, j] = which index does particle i have in the neighbour
                             list of particle j, where j is the j-th neighbour of i
                             Due to different smoothing lengths, particle j can be the
-                            neighbour of i, but i not the neighbour of j. In that case
-                            iinds[i, j] = -1 and 
-                            iinds[neighbours[i][j], neighbours[j].index(i)] >= 0
+                            neighbour of i, but i not the neighbour of j. 
+                            In that case, the particles will be assigned indices j > nneigh[i]
 
     """
 
@@ -308,7 +307,8 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1, periodic=True):
 
     # store the index of particle i when required as the neighbour of particle j in arrays[npart, maxneigh]
     # i.e. find index 0 <= i < maxneigh for ever j
-    iinds = np.zeros((npart, maxneigh), dtype=np.int) 
+    iinds = np.zeros((npart, 2*maxneigh), dtype=np.int) 
+    current_count = nneigh[:]
 
     for i in range(npart):
         for jc,j in enumerate(neighbours[i]):
@@ -329,8 +329,9 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1, periodic=True):
                     print("exiting")
                     quit()
                 else:
-                    iinds[i, jc] = -1
-                    continue
+                    # append after nneigh[j]
+                    iinds[i, jc] = current_count[j]
+                    current_count[j] += 1
 
     #  print("iinds[25, 10]", iinds[25, 10], neighbours[3][10])
     #  print(neighbours[25])

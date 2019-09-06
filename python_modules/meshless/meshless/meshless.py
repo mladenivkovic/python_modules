@@ -357,45 +357,38 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodi
         neighbours: list of lists of neighbour indices for every particle i
     """
 
+    # first get neighbour data
+    neighbour_data = get_neighbour_data_for_all(x, y, h, fact=fact, L=L, periodic=periodic)
 
-    npart = x.shape[0]
-
-    neighbours = [[] for i in x]
-
-    for i in range(npart):
-        # find and store all neighbours;
-        neighbours[i] = find_neighbours(i, x, y, h, fact=fact, L=L, periodic=periodic)
+    maxneigh = neighbour_data.maxneigh
+    neighbours = neighbour_data.neighbours
+    nneigh = neighbour_data.nneigh
+    iinds = neighbour_data.iinds
 
     # compute all psi_j(x_i) for all i, j
     # first index: index j of psi: psi_j(x)
     # second index: index of x_i: psi(x_i)
 
-    psi_j_at_i = np.zeros((npart, npart), dtype=np.float)
-
-    for j in range(npart):
-        for i in neighbours[j]:
-            # kernels are symmetric in x_i, x_j, but h can vary!!!!
-            psi_j_at_i[j, i] = psi(x[i], y[i], x[j], y[j], h[i], kernel=kernel, fact=fact, L=L, periodic=periodic)
-
-        psi_j_at_i[j, j] = psi(0.0, 0.0, 0.0, 0.0, h[j], kernel=kernel, fact=fact, L=L, periodic=periodic) 
-
-
+    psi_j_at_i = np.zeros((npart, maxneigh), dtype=np.float)
     omega = np.zeros(npart, dtype=my_float)
 
-    for i in range(npart):
-        # compute normalisation omega for all particles
-        omega[i] = np.sum(psi_j_at_i[i, neighbours[i]]) + psi_j_at_i[i,i]
-        # omega_i = sum_k W(x_k - x_i, h_k) = sum_k psi_i(x_k) as it is currently stored in memory
+    for j in range(npart):
+        for i, ind_n in enumerate(neighbours[j]):
+            # kernels are symmetric in x_i, x_j, but h can vary!!!!
+            psi_j_at_i[j, i] = psi(x[ind_n], y[ind_n], x[j], y[j], h[ind_n], 
+                                    kernel=kernel, fact=fact, L=L, periodic=periodic)
+            omega[ind_n] += psi_j_at_i[j, i]
 
-    grad_psi_j_at_i = get_grad_psi_j_at_i_analytical(x, y, h, omega, psi_j_at_i, neighbours,
+        # add self-contribution
+        omega[j] +=  psi(0.0, 0.0, 0.0, 0.0, h[j], kernel=kernel, fact=fact, L=L, periodic=periodic)
+
+
+
+    # get gradients
+    grad_psi_j_at_i = get_grad_psi_j_at_i_analytical(x, y, h, omega, psi_j_at_i, neighbour_data, 
             kernel=kernel, fact=fact, periodic=periodic)
 
-
-    # normalize psi's and convert to float for linalg module
-    for i in range(npart):
-        psi_j_at_i[:, i] /= omega[i]
-    if my_float != np.float:
-        psi_j_at_i = psi_j_at_i.astype(np.float)
+    del psi_j_at_i
 
 
     maxn = max([len(n) for n in neighbours])
@@ -414,13 +407,15 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodi
 
         V_i = Vol[i]
 
-        for jind,j in enumerate(nbors): 
+        for j, nj in enumerate(nbors): 
             
-            grad_psi_i_xj = grad_psi_j_at_i[i, j]
-            grad_psi_j_xi = grad_psi_j_at_i[j, i]
+            grad_psi_i_xj = grad_psi_j_at_i[pind, j]
+            iind = iinds[pind, j] 
+            grad_psi_j_xi = grad_psi_j_at_i[nj, iind]
+
             V_j = Vol[j]
-        
-            A_ij[i, jind] = V_j * grad_psi_i_xj - V_i * grad_psi_j_xi
+    
+            A_ij[i, j] = V_j * grad_psi_i_xj - V_i * grad_psi_j_xi
      
     # return -A_ij: You will actually use A_ji . F in the formula
     # for the hydrodynamics, not A_ij . F
@@ -471,7 +466,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
     # first index: index j of psi: psi_j(x)
     # second index: index of x_i: psi(x_i)
 
-    psi_j_at_i = np.zeros((maxneigh, npart), dtype=np.float)
+    psi_j_at_i = np.zeros((npart, maxneigh), dtype=np.float)
     omega = np.zeros(npart, dtype=my_float)
 
     for j in range(npart):
@@ -492,15 +487,6 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
 
     del psi_j_at_i
 
-    # normalize psi's and convert to float for linalg module
-    #  divide = np.empty((maxneigh+1), dtype=np.float)
-    #  for i in range(npart):
-    #      divide[:nneigh[i]] = omega[neighbours[i]]
-    #      divide[nneigh[i]] = omega[i]
-    #      psi_j_at_i[i,:nneigh[i]+1] /= divide[nneigh[i]+1]
-    #  if my_float != np.float:
-        #  psi_j_at_i = psi_j_at_i.astype(np.float)
-
     # now compute A_ij for all neighbours j of i
     nbors = neighbours[pind]
 
@@ -511,11 +497,8 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
     for j, nj in enumerate(nbors): 
         
         grad_psi_i_xj = grad_psi_j_at_i[pind, j]
-        iind = iinds[nj, j]
-        if iind >= 0:
-            grad_psi_j_xi = grad_psi_j_at_i[j, iind]
-        else:
-            grad_psi_j_xi = np.zeros((2), dtype=np.float)
+        iind = iinds[pind, j] 
+        grad_psi_j_xi = grad_psi_j_at_i[nj, iind]
 
         V_j = 1/omega[nj]
     
@@ -840,63 +823,62 @@ def get_grad_psi_j_at_i_analytical(x, y, h, omega, psi_j_at_i, neighbour_data,
     nneigh = neighbour_data.nneigh
     iinds = neighbour_data.iinds
 
+    # gradient of psi_j at neighbour i's position
     grad_psi_j_at_i = np.zeros((npart, maxneigh, 2), dtype=my_float)
+    # gradient of W_j at neighbour i's position
     grad_W_j_at_i = np.zeros((npart, maxneigh, 2), dtype=my_float)
+    # gradient sum for the same h_i
     sum_grad_W = np.zeros((npart, 2), dtype=my_float)
 
-    # get kernel gradients
-    for j in range(npart):
-        for i, ind_n in enumerate(neighbours[j]):
-
-            dx, dy = get_dx(x[j], x[ind_n], y[j], y[ind_n], L=L, periodic=periodic)
+    for i in range(npart):
+        for j, jind in enumerate(neighbours[i]):
+            dx, dy = get_dx( x[i], x[jind], y[i], y[jind], L=L, periodic=periodic)
             r = np.sqrt(dx**2 + dy**2)
 
-            dwdr = dWdr(r/h[j], h[j], kernel)
-            grad_W_j_at_i[ind_n, i, 0] = dwdr * dx / r
-            grad_W_j_at_i[ind_n, i, 1] = dwdr * dy / r
-            sum_grad_W[j] += grad_W_j_at_i[ind_n, i]
+            dwdr = dWdr(r/h[i], h[i], kernel)
+            iind = iinds[i, j]
+            grad_W_j_at_i[jind, iind, 0] = dwdr * dx / r
+            grad_W_j_at_i[jind, iind, 1] = dwdr * dy / r
+
+            sum_grad_W[i] += grad_W_j_at_i[jind, iind]
+
 
 
     # finish computing the gradients: Need W(r, h), which is currently stored as psi
     for j in range(npart):
         for i, ind_n in enumerate(neighbours[j]):
-            iind = iinds[ind_n, i]
-            if iind >= 0: # -1 for exception handling
-                grad_psi_j_at_i[j, iind, 0] = grad_W_j_at_i[j, iind, 0]/omega[iind] - psi_j_at_i[j, i] * sum_grad_W[iind, 0]/omega[iind]**2
-                grad_psi_j_at_i[j, i, 1] = grad_W_j_at_i[j, i, 1]/omega[iind] - psi_j_at_i[j, i] * sum_grad_W[iind, 1]/omega[iind]**2
+            grad_psi_j_at_i[j, i, 0] = grad_W_j_at_i[j, i, 0]/omega[ind_n] - psi_j_at_i[j, i] * sum_grad_W[ind_n, 0]/omega[ind_n]**2
+            grad_psi_j_at_i[j, i, 1] = grad_W_j_at_i[j, i, 1]/omega[ind_n] - psi_j_at_i[j, i] * sum_grad_W[ind_n, 1]/omega[ind_n]**2
                 #  grad_psi_j_at_i[j, iind, :] = grad_W_j_at_i[j, iind, :]/omega[iind] - psi_j_at_i[j, iind] * sum_grad_W[iind, :]/omega[iind]**2
 
+    j = 20
+    i = 0
+    ind_n = neighbours[j][i]
+    iind = iinds[ind_n, i]
+    jind = iinds[j, iind]
+    #  print(grad_W_j_at_i[j, :, 0])
+    #  print(grad_W_j_at_i[j+1, :, 0])
+    print("j=", j)
+    print("ind_n=", ind_n)
+    print("grad W =", grad_W_j_at_i[j, i, 0])
+    print("omega = ", omega[ind_n])
+    print("psi_j = ", psi_j_at_i[j, i])
+    print("sum_grad =", sum_grad_W[ind_n, 0], sum_grad_W[ind_n, 0])
 
-    #  grad_psi_j_at_i = np.zeros((npart, maxneigh, 2), dtype=my_float)
-    #  grad_W_j_at_i = np.zeros((npart, maxneigh, 2), dtype=my_float)
-    #  sum_grad_W = np.zeros((npart, 2), dtype=my_float)
+
+
     #
-    #  # get kernel gradients
-    #  for j in range(npart):
-    #      for i, ind_n in enumerate(neighbours[j]):
-    #
-    #          dx, dy = get_dx(x[j], x[ind_n], y[j], y[ind_n], L=L, periodic=periodic)
-    #          r = np.sqrt(dx**2 + dy**2)
-    #
-    #          dwdr = dWdr(r/h[j], h[j], kernel)
-    #          grad_W_j_at_i[ind_n, i, 0] = dwdr * dx / r
-    #          grad_W_j_at_i[ind_n, i, 1] = dwdr * dy / r
-    #          sum_grad_W[j] += grad_W_j_at_i[ind_n, i]
-    #
-    #
-    #  # finish computing the gradients: Need W(r, h), which is currently stored as psi
-    #  for j in range(npart):
-    #      for i, ind_n in enumerate(neighbours[j]):
-    #          iind = iinds[ind_n, i]
-    #          if iind >= 0: # -1 for exception handling
-    #              grad_psi_j_at_i[j, iind, 0] = grad_W_j_at_i[j, iind, 0]/omega[iind] - psi_j_at_i[j, i] * sum_grad_W[iind, 0]/omega[iind]**2
-    #              grad_psi_j_at_i[j, i, 1] = grad_W_j_at_i[j, i, 1]/omega[iind] - psi_j_at_i[j, i] * sum_grad_W[iind, 1]/omega[iind]**2
-    #              #  grad_psi_j_at_i[j, iind, :] = grad_W_j_at_i[j, iind, :]/omega[iind] - psi_j_at_i[j, iind] * sum_grad_W[iind, :]/omega[iind]**2
+    #  print(sum_grad_W)
+    #  for i in range(3):
+    #      for j in range(3):
+    #          print(grad_W_j_at_i[j, i])
+    #      print()
 
     del grad_W_j_at_i, sum_grad_W
 
 
     return grad_psi_j_at_i
+
 
 
 
