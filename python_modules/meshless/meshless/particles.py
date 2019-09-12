@@ -333,10 +333,6 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1, periodic=True):
                     iinds[i, jc] = current_count[j]
                     current_count[j] += 1
 
-    #  print("iinds[25, 10]", iinds[25, 10], neighbours[3][10])
-    #  print(neighbours[25])
-    #  print()
-
 
     class neighbour_data:
         def __init__(self, neighbours=None, maxneigh=None, nneigh=None, iinds=None):
