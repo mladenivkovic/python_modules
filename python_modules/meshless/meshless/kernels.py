@@ -8,14 +8,18 @@ import numpy as np
 
 
 # Names of all available kernels
-kernels = [ 'cubic_spline', 'quartic_spline',   'quintic_spline', 
-            'wendland_C2',  'wendland_C4',      'wendland_C6']
-kernel_derivatives = [ 'cubic_spline', 'quartic_spline',   'quintic_spline', 
-            'wendland_C2',  'wendland_C4',      'wendland_C6']
+kernels =                   [ 'cubic_spline', 'quartic_spline',   'quintic_spline', 
+                              'wendland_C2',  'wendland_C4',      'wendland_C6']
 
-kernels_with_gaussian = [   'cubic_spline', 'quartic_spline',   'quintic_spline', 
-                            'wendland_C2',  'wendland_C4',      'wendland_C6',
-                            'gaussian']
+kernel_derivatives =        [ 'cubic_spline', 'quartic_spline',   'quintic_spline', 
+                              'wendland_C2',  'wendland_C4',      'wendland_C6']
+
+kernels_with_gaussian =     [ 'cubic_spline', 'quartic_spline',   'quintic_spline', 
+                              'wendland_C2',  'wendland_C4',      'wendland_C6',
+                              'gaussian']
+
+kernel_pretty_names =       [ 'cubic spline kernel', 'quartic spline kernel',   'quintic spline kernel', 
+                              'wendland C2 kernel',  'wendland C4 kernel',      'wendland C6 kernel']
 
 # factors of all kernels for which fact*H = 0
 kernelfacts = [ 1, 1, 1,
