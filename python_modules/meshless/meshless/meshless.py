@@ -253,6 +253,8 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodi
     nneigh = neighbour_data.nneigh
     iinds = neighbour_data.iinds
 
+    npart = len(neighbours)
+
     # compute all psi_j(x_i) for all i, j
     # first index: index j of psi: psi_j(x)
     # second index: index of x_i: psi(x_i)
@@ -297,8 +299,8 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodi
 
         for j, nj in enumerate(nbors): 
             
-            grad_psi_i_xj = grad_psi_j_at_i[pind, j]
-            iind = iinds[pind, j] 
+            grad_psi_i_xj = grad_psi_j_at_i[i, j]
+            iind = iinds[i, j] 
             grad_psi_j_xi = grad_psi_j_at_i[nj, iind]
 
             V_j = Vol[j]
@@ -502,11 +504,11 @@ def get_grad_psi_j_at_i_analytical(x, y, h, omega, psi_j_at_i, neighbour_data,
             grad_psi_j_at_i[j, i, 1] = grad_W_j_at_i[j, i, 1]/omega[ind_n] - psi_j_at_i[j, i] * sum_grad_W[ind_n, 1]/omega[ind_n]**2
                 #  grad_psi_j_at_i[j, iind, :] = grad_W_j_at_i[j, iind, :]/omega[iind] - psi_j_at_i[j, iind] * sum_grad_W[iind, :]/omega[iind]**2
 
-    j = 20
-    i = 0
-    ind_n = neighbours[j][i]
-    iind = iinds[ind_n, i]
-    jind = iinds[j, iind]
+    #  j = 20
+    #  i = 0
+    #  ind_n = neighbours[j][i]
+    #  iind = iinds[ind_n, i]
+    #  jind = iinds[j, iind]
     #  print(grad_W_j_at_i[j, :, 0])
     #  print(grad_W_j_at_i[j+1, :, 0])
     #  print("j=", j)
