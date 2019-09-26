@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
 
-#===============================
-# Particle related methods
-#===============================
+###########################################################################################
+#  package:   astro-meshless-surfaces
+#  file:      particles.py
+#  brief:     particle related functions
+#  copyright: GPLv3
+#             Copyright (C) 2019 EPFL (Ecole Polytechnique Federale de Lausanne)
+#             LASTRO - Laboratory of Astrophysics of EPFL
+#  author:    Mladen Ivkovic <mladen.ivkovic@epfl.ch>
+#
+# This file is part of astro-meshless-surfaces.
+###########################################################################################
 
 import numpy as np
 
@@ -63,7 +71,7 @@ def find_index_by_id( ids, id_to_look_for ):
 
 
 #================================================================
-def find_neighbours(ind, x, y, h, fact=1, L=1, periodic=True):
+def find_neighbours(ind, x, y, h, fact=1.0, L=1.0, periodic=True):
 #================================================================
     """
     Find indices of all neighbours of a particle with index ind
@@ -87,7 +95,7 @@ def find_neighbours(ind, x, y, h, fact=1, L=1, periodic=True):
 
         j = 0
         for i in range(x.shape[0]):
-            if i==ind:
+            if i == ind:
                 continue
 
             dx, dy = get_dx(x0, x[i], y0, y[i], L=L, periodic=periodic)
@@ -96,7 +104,7 @@ def find_neighbours(ind, x, y, h, fact=1, L=1, periodic=True):
 
             if dist < fhsq:
                 neigh[j] = i
-                j+=1
+                j += 1
 
         return neigh[:j]
 
@@ -114,7 +122,7 @@ def find_neighbours(ind, x, y, h, fact=1, L=1, periodic=True):
 
 
 #=================================================================================
-def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1, L=1, periodic=True):
+def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1.0, L=1.0, periodic=True):
 #=================================================================================
     """
     Find indices of all neighbours around position x0, y0
@@ -182,7 +190,7 @@ def V(ind, m, rho):
     """
     V = m[ind]/rho[ind]
     if V > 1:
-        print("Got particle volume V=", v, ". Did you put the arguments in the correct places?")
+        print("Got particle volume V=", V, ". Did you put the arguments in the correct places?")
     return V
 
 
@@ -228,7 +236,7 @@ def find_added_particle(ids):
 
 
 #=====================================================
-def get_dx(x1, x2, y1, y2, L=1, periodic=True):
+def get_dx(x1, x2, y1, y2, L=1.0, periodic=True):
 #=====================================================
     """
     Compute difference of vectors [x1 - x2, y1 - y2] while
@@ -265,7 +273,7 @@ def get_dx(x1, x2, y1, y2, L=1, periodic=True):
 
 
 #========================================================================
-def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1, periodic=True):
+def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
 #========================================================================
     """
     Gets all the neighbour data for all particles ready.

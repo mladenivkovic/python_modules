@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 
-#===========================================
+###########################################################################################
+#  package:   astro-meshless-surfaces
+#  file:      meshless.py
+#  brief:     main file, contains the interesting routines.
+#  copyright: GPLv3
+#             Copyright (C) 2019 EPFL (Ecole Polytechnique Federale de Lausanne)
+#             LASTRO - Laboratory of Astrophysics of EPFL
+#  author:    Mladen Ivkovic <mladen.ivkovic@epfl.ch>
 #
-# A module containing common routines for 
+# This file is part of astro-meshless-surfaces.
+###########################################################################################
+
+#===========================================
+# A module containing common routines for
 # the meshless effective area visualisiation
 # with 2d datasets
-#
 #===========================================
 
 try:
@@ -26,7 +36,7 @@ my_float = np.float64
 
 
 #===========================================================================================
-def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodic=True):
+def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0, periodic=True):
 #===========================================================================================
     """
     Compute A_ij as defined by Hopkins 2015
@@ -128,7 +138,7 @@ def Aij_Hopkins(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, perio
 
 
 #===================================================================================================
-def Aij_Hopkins_v2(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodic=True):
+def Aij_Hopkins_v2(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0, periodic=True):
 #===================================================================================================
     """
     Compute A_ij as defined by Hopkins 2015, second version
@@ -224,7 +234,7 @@ def Aij_Hopkins_v2(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, pe
 
 
 #==================================================================================================
-def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodic=True):
+def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0, periodic=True):
 #==================================================================================================
     """
     Compute A_ij as defined by Ivanova 2013, using the discretization by Taylor 
@@ -322,7 +332,7 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodi
 
 
 #==================================================================================================
-def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodic=True):
+def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0, periodic=True):
 #==================================================================================================
     """
     Compute A_ij as defined by Ivanova 2013, using the discretization by Taylor 
@@ -449,7 +459,7 @@ def x_ij(pind, x, y, h, nbors=None, which=None):
 
 #==========================================================================================
 def get_grad_psi_j_at_i_analytical(x, y, h, omega, psi_j_at_i, neighbour_data, 
-    kernel='cubic_spline', fact=1, L=1, periodic=True):
+    kernel='cubic_spline', fact=1.0, L=1.0, periodic=True):
 #==========================================================================================
     """
     Compute \nabla \psi_k (x_l) for all particles k and l 
@@ -548,7 +558,7 @@ def get_grad_psi_j_at_i_analytical(x, y, h, omega, psi_j_at_i, neighbour_data,
 
 
 #==========================================================================================
-def compute_psi(xi, yi, xj, yj, h, kernel='cubic_spline', fact=1, L=1, periodic=True):
+def compute_psi(xi, yi, xj, yj, h, kernel='cubic_spline', fact=1.0, L=1.0, periodic=True):
 #==========================================================================================
     """
     Compute all psi_j(x_i)
@@ -585,9 +595,9 @@ def compute_psi(xi, yi, xj, yj, h, kernel='cubic_spline', fact=1, L=1, periodic=
 
 
 
-#============================================================================
-def psi(x, y, xi, yi, h, kernel='cubic_spline', fact=1, L=1, periodic=True):
-#============================================================================
+#=================================================================================
+def psi(x, y, xi, yi, h, kernel='cubic_spline', fact=1.0, L=1.0, periodic=True):
+#=================================================================================
     """
     UNNORMALIZED Volume fraction at position x of some particle
     with coordinates xi, yi, smoothing length h(x)
@@ -660,7 +670,7 @@ def get_matrix(xi, yi, xj, yj, psi_j, L=1, periodic=True):
 
 
 #=============================================================================================
-def h_of_x(xx, yy, x, y, h, m, rho, kernel='cubic_spline', fact=1, L=1, periodic=True):
+def h_of_x(xx, yy, x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0, periodic=True):
 #=============================================================================================
     """
     Compute h(x) at position (xx, yy), where there is 
