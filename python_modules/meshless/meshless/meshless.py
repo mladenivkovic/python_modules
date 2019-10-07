@@ -514,29 +514,6 @@ def get_grad_psi_j_at_i_analytical(x, y, h, omega, psi_j_at_i, neighbour_data,
             grad_psi_j_at_i[j, i, 1] = grad_W_j_at_i[j, i, 1]/omega[ind_n] - psi_j_at_i[j, i] * sum_grad_W[ind_n, 1]/omega[ind_n]**2
                 #  grad_psi_j_at_i[j, iind, :] = grad_W_j_at_i[j, iind, :]/omega[iind] - psi_j_at_i[j, iind] * sum_grad_W[iind, :]/omega[iind]**2
 
-    #  j = 20
-    #  i = 0
-    #  ind_n = neighbours[j][i]
-    #  iind = iinds[ind_n, i]
-    #  jind = iinds[j, iind]
-    #  print(grad_W_j_at_i[j, :, 0])
-    #  print(grad_W_j_at_i[j+1, :, 0])
-    #  print("j=", j)
-    #  print("ind_n=", ind_n)
-    #  print("grad W =", grad_W_j_at_i[j, i, 0])
-    #  print("omega = ", omega[ind_n])
-    #  print("psi_j = ", psi_j_at_i[j, i])
-    #  print("sum_grad =", sum_grad_W[ind_n, 0], sum_grad_W[ind_n, 0])
-
-
-
-    #
-    #  print(sum_grad_W)
-    #  for i in range(3):
-    #      for j in range(3):
-    #          print(grad_W_j_at_i[j, i])
-    #      print()
-
     del grad_W_j_at_i, sum_grad_W
 
 
