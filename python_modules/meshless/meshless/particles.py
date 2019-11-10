@@ -311,58 +311,72 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
     #-----------------------------------------------
         """
         A cell object to store particles in.
-        Stores particle indexes
+        Stores particle indexes, positions, compact support lengths
         """
 
         def __init__(self):
            self.npart = 0
            self.size = 100
            self.parts = np.zeros(self.size, dtype=np.int)
+           self.x = np.zeros(self.size, dtype=np.float)
+           self.y = np.zeros(self.size, dtype=np.float)
+           self.h = np.zeros(self.size, dtype=np.float)
            return
 
-        def add_particle(self, ind):
+        def add_particle(self, ind, xp, yp, hp):
             """
-            Add a particle, store the index
+            Add a particle, store the index, positions and h
             """
             if self.npart == self.size:
                 self.parts = np.append(self.parts, np.zeros(self.size, dtype=np.int))
+                self.x = np.append(self.x, np.zeros(self.size, dtype=np.float))
+                self.y = np.append(self.y, np.zeros(self.size, dtype=np.float))
+                self.h = np.append(self.h, np.zeros(self.size, dtype=np.float))
                 self.size *= 2
 
             self.parts[self.npart] = ind
+            self.x[self.npart] = xp
+            self.y[self.npart] = yp
+            self.h[self.npart] = hp
             self.npart += 1
             
             return
 
 
     
-    #-----------------------------------------------
-    def find_neighbours_in_cell(i, j, p):
-    #-----------------------------------------------
+    #-------------------------------------------------------
+    def find_neighbours_in_cell(i, j, p, xx, yy, hh):
+    #-------------------------------------------------------
         """
-        Find neighbours of particles with index p in the cell
-        i, j of the grid
+        Find neighbours of a particle in the cell with indices i,j
+        of the grid
+        p:      global particle index to work with
+        xx, yy: position of particle x
+        hh:     compact support radius for p
         """
         n = 0
         neigh = [0 for i in range(1000)]
-    
-        np = grid[i][j].npart
-        parts = grid[i][j].parts
-        
-        xp = x[p]
-        yp = y[p]
-        hp = h[p]
-        fhsq = hp*hp*fact*fact
+        ncell = grid[i][j] # neighbour cell we're checking for
 
-        for cp in parts[:np]:
+        N = ncell.npart
+        
+        fhsq = hh*hh*fact*fact
+
+        for c, cp in enumerate(ncell.parts[:N]):
             if cp == p:
+                # skip yourself
                 continue
 
-            dx, dy = get_dx(xp, x[cp], yp, y[cp], L=L, periodic=periodic)
+            dx, dy = get_dx(xx, ncell.x[c], yy, ncell.y[c], L=L, periodic=periodic)
 
             dist = dx**2 + dy**2
 
             if dist <= fhsq:
-                neigh[n] = cp
+                try:
+                    neigh[n] = cp
+                except ValueError:
+                    nneigh+=[0 for i in range(1000)]
+                    nneigh[n] = cp
                 n += 1
 
         return neigh[:n]
@@ -370,75 +384,124 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
 
 
 
-
-
-
     npart = x.shape[0]
 
     # first find cell size
-    cell_size = 2*h.max()
-    ncells = int(L/cell_size) + 1
-
-    # force at least 3x3 to skip identical cell checks when looping
-    # over neighbours
-    if ncells < 3:
-        ncells = 3
-        cell_size = L/3
-
+    ncells = int(L/h.max()) + 1
+    cell_size = L/ncells
+    #  print("ncells is", ncells)
+    #  print("cell size is", cell_size)
 
     # create grid
     grid = [[cell() for i in range(ncells)] for j in range(ncells)]
-
 
     # sort out particles
     for p in range(npart):
         i = int(x[p]/cell_size)
         j = int(y[p]/cell_size)
-        grid[i][j].add_particle(p)
-
-
+        grid[i][j].add_particle(p, x[p], y[p], h[p])
 
 
     neighbours = [[] for i in x]
     nneigh = np.zeros(npart, dtype=np.int)
+   
+
+    if ncells < 4:
+        # you'll always need to check all cells, so just do that
+        i_search = np.zeros(ncells*ncells, dtype=np.int)
+        j_search = np.zeros(ncells*ncells, dtype=np.int)
+        ind = 0
+        for i in range(ncells):
+            for j in range(ncells):
+                i_search[ind] = i
+                j_search[ind] = j
+                ind += 1
+
+        # main loop: find and store all neighbours:
+        for p in range(npart):
+            nbors = []
+            for i,j in zip(i_search, j_search):
+                nbors += find_neighbours_in_cell(i, j, p, x[p], y[p], h[p])
+        
+            neighbours[p] = nbors
+            nneigh[p] = len(nbors)
+
+        return neighbours, nneigh
+
+
+
+
 
     # main loop: find and store all neighbours;
+    # go cell by cell
+    for row in range(ncells):
+        for col in range(ncells):
+
+            cell = grid[row][col]
+            N = cell.npart
+            parts = cell.parts
+            if N == 0: continue
+
+            hmax = cell.h[:N].max()
+
+            maxdist = int(cell_size/hmax+0.5) + 1
+
+            # loop over all neighbours
+            # need to loop over entire square. You need to consider
+            # the maximal distance from the edges/corners, not from
+            # the center of the cell!
+            for i in range(-maxdist, maxdist+1):
+                for j in range(-maxdist, maxdist+1):
+                    iind = row+i
+                    jind = col+j
+
+                    if periodic:
+                        while iind<0: iind += ncells
+                        while iind>=ncells: iind -= ncells
+                        while jind<0: jind += ncells
+                        while jind>=ncells: jind -= ncells
+                    else:
+                        if iind < 0 or iind >= ncells:
+                            continue
+                        if jind < 0 or jind >= ncells:
+                            continue
+
+                    # get closest corner of neighbour
+                    ic = iind
+                    if i < 0: ic += 1
+                    jc = jind
+                    if j < 0: jc += 1
+
+                    xc = ic*cell_size
+                    yc = jc*cell_size
+
+                    # loop over all particles in cell
+                    for pc, pg in enumerate(cell.parts[:N]):
+
+                        xp = cell.x[pc]
+                        yp = cell.y[pc]
+                        hp = cell.h[pc]
+
+                        # if i or j = 0, then compare to the edge, not to the corner
+                        if i == 0:
+                            xc = xp
+                        if j == 0:
+                            yc = yp
+
+                        # check distance to corner of neighbour cell 
+                        dx, dy = get_dx(xp, xc, yp, yc, L=L, periodic=periodic)
+                        dsq = dx**2 + dy**2 
+                        if dsq / hp**2 > 1:
+                            continue
+
+                        neighbours[pg] += find_neighbours_in_cell(iind, jind, pg, xp, yp, hp)
+
+
+    # sort neighbours by index
     for p in range(npart):
- 
-        self_i = int(x[p]/cell_size)
-        self_j = int(y[p]/cell_size)
-
-        nbors = find_neighbours_in_cell(self_i, self_j, p) 
-
-        upper_i = self_i + 1
-        if upper_i == ncells:
-            upper_i -= ncells
-        nbors += find_neighbours_in_cell(upper_i, self_j, p)
-
-        lower_i = self_i - 1
-        if lower_i == -1:
-            lower_i += ncells
-        nbors += find_neighbours_in_cell(lower_i, self_j, p)
-
-        right_j = self_j + 1
-        if right_j == ncells:
-            right_j -= ncells
-        nbors += find_neighbours_in_cell(self_i, right_j, p)
-
-        left_j = self_j - 1
-        if left_j == -1:
-            left_j += ncells
-        nbors += find_neighbours_in_cell(self_i, left_j, p)
-
-
-        nbors += find_neighbours_in_cell(upper_i, right_j, p)
-        nbors += find_neighbours_in_cell(upper_i, left_j, p)
-        nbors += find_neighbours_in_cell(lower_i, right_j, p)
-        nbors += find_neighbours_in_cell(lower_i, left_j, p)
-
-
-        neighbours[p] = sorted(nbors)
+        neighbours[p].sort()
         nneigh[p] = len(neighbours[p])
+
 
 
 
@@ -453,28 +516,28 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
     iinds = np.zeros((npart, 2*maxneigh), dtype=np.int)
     current_count = copy.copy(nneigh)
 
-    for i in range(npart):
-        for jc,j in enumerate(neighbours[i]):
-
-            try:
-                iinds[i, jc] = (neighbours[j]).index(i)
-            except ValueError:
-                # it is possible that j is a neighbour for i, but i is not a neighbour
-                # for j depending on their respective smoothing lengths
-                dx, dy = get_dx(x[i], x[j], y[i], y[j], L=L, periodic=periodic)
-                r = np.sqrt(dx**2 + dy**2)
-                if r/h[j] < 1:
-                    print("something went wrong when computing gradients.")
-                    print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r/h[j])
-                    print("neighbours i:", neighbours[i])
-                    print("neighbours j:", neighbours[j])
-                    print("couldn't find i as neighbour of j")
-                    print("exiting")
-                    quit()
-                else:
-                    # append after nneigh[j]
-                    iinds[i, jc] = current_count[j]
-                    current_count[j] += 1
+    #  for i in range(npart):
+    #      for jc,j in enumerate(neighbours[i]):
+    #
+    #          try:
+    #              iinds[i, jc] = (neighbours[j]).index(i)
+    #          except ValueError:
+    #              # it is possible that j is a neighbour for i, but i is not a neighbour
+    #              # for j depending on their respective smoothing lengths
+    #              dx, dy = get_dx(x[i], x[j], y[i], y[j], L=L, periodic=periodic)
+    #              r = np.sqrt(dx**2 + dy**2)
+    #              if r/h[j] < 1:
+    #                  print("something went wrong when computing iinds in get_neighbour_data_for_all.")
+    #                  print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r/h[j])
+    #                  print("neighbours i:", neighbours[i])
+    #                  print("neighbours j:", neighbours[j])
+    #                  print("couldn't find i as neighbour of j")
+    #                  print("exiting")
+    #                  quit()
+    #              else:
+    #                  # append after nneigh[j]
+    #                  iinds[i, jc] = current_count[j]
+    #                  current_count[j] += 1
 
 
     nd = neighbour_data(neighbours=neighbours,
@@ -550,7 +613,7 @@ def get_neighbour_data_for_all_naive(x, y, h, fact=1.0, L=1.0, periodic=True):
                 dx, dy = get_dx(x[i], x[j], y[i], y[j], L=L, periodic=periodic)
                 r = np.sqrt(dx**2 + dy**2)
                 if r/h[j] < 1:
-                    print("something went wrong when computing gradients.")
+                    print("something went wrong when computing iinds.")
                     print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r/h[j])
                     print("neighbours i:", neighbours[i])
                     print("neighbours j:", neighbours[j])
