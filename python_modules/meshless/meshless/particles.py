@@ -339,11 +339,11 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             self.y[self.npart] = yp
             self.h[self.npart] = hp
             self.npart += 1
-            
+
             return
 
 
-    
+
     #-------------------------------------------------------
     def find_neighbours_in_cell(i, j, p, xx, yy, hh):
     #-------------------------------------------------------
@@ -359,7 +359,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
         ncell = grid[i][j] # neighbour cell we're checking for
 
         N = ncell.npart
-        
+
         fhsq = hh*hh*fact*fact
 
         for c, cp in enumerate(ncell.parts[:N]):
@@ -404,7 +404,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
 
     neighbours = [[] for i in x]
     nneigh = np.zeros(npart, dtype=np.int)
-   
+
 
     if ncells < 4:
         # you'll always need to check all cells, so just do that
@@ -422,7 +422,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             nbors = []
             for i,j in zip(i_search, j_search):
                 nbors += find_neighbours_in_cell(i, j, p, x[p], y[p], h[p])
-        
+
             neighbours[p] = nbors
             nneigh[p] = len(nbors)
 
@@ -488,9 +488,9 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                         if j == 0:
                             yc = yp
 
-                        # check distance to corner of neighbour cell 
+                        # check distance to corner of neighbour cell
                         dx, dy = get_dx(xp, xc, yp, yc, L=L, periodic=periodic)
-                        dsq = dx**2 + dy**2 
+                        dsq = dx**2 + dy**2
                         if dsq / hp**2 > 1:
                             continue
 
@@ -516,28 +516,28 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
     iinds = np.zeros((npart, 2*maxneigh), dtype=np.int)
     current_count = copy.copy(nneigh)
 
-    #  for i in range(npart):
-    #      for jc,j in enumerate(neighbours[i]):
-    #
-    #          try:
-    #              iinds[i, jc] = (neighbours[j]).index(i)
-    #          except ValueError:
-    #              # it is possible that j is a neighbour for i, but i is not a neighbour
-    #              # for j depending on their respective smoothing lengths
-    #              dx, dy = get_dx(x[i], x[j], y[i], y[j], L=L, periodic=periodic)
-    #              r = np.sqrt(dx**2 + dy**2)
-    #              if r/h[j] < 1:
-    #                  print("something went wrong when computing iinds in get_neighbour_data_for_all.")
-    #                  print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r/h[j])
-    #                  print("neighbours i:", neighbours[i])
-    #                  print("neighbours j:", neighbours[j])
-    #                  print("couldn't find i as neighbour of j")
-    #                  print("exiting")
-    #                  quit()
-    #              else:
-    #                  # append after nneigh[j]
-    #                  iinds[i, jc] = current_count[j]
-    #                  current_count[j] += 1
+    for i in range(npart):
+        for jc,j in enumerate(neighbours[i]):
+
+            try:
+                iinds[i, jc] = (neighbours[j]).index(i)
+            except ValueError:
+                # it is possible that j is a neighbour for i, but i is not a neighbour
+                # for j depending on their respective smoothing lengths
+                dx, dy = get_dx(x[i], x[j], y[i], y[j], L=L, periodic=periodic)
+                r = np.sqrt(dx**2 + dy**2)
+                if r/h[j] < 1:
+                    print("something went wrong when computing iinds in get_neighbour_data_for_all.")
+                    print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r/h[j])
+                    print("neighbours i:", neighbours[i])
+                    print("neighbours j:", neighbours[j])
+                    print("couldn't find i as neighbour of j")
+                    print("exiting")
+                    quit()
+                else:
+                    # append after nneigh[j]
+                    iinds[i, jc] = current_count[j]
+                    current_count[j] += 1
 
 
     nd = neighbour_data(neighbours=neighbours,
@@ -576,7 +576,7 @@ def get_neighbour_data_for_all_naive(x, y, h, fact=1.0, L=1.0, periodic=True):
                             In that case, the particles will be assigned indices j > nneigh[i]
 
     """
-    
+
     import copy
 
     npart = x.shape[0]

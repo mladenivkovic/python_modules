@@ -229,10 +229,6 @@ def Aij_Hopkins_v2(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0
 
 
 
-
-
-
-
 #==================================================================================================
 def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0, periodic=True):
 #==================================================================================================
@@ -252,6 +248,7 @@ def Aij_Ivanova_all(x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0, per
 
     returns:
         A_ij:       array of A_ij, containing x and y component for every neighbour j of every particle i
+                    !! important: indices i and j are switched compared to definition in Ivanova 2013
         neighbours: list of lists of neighbour indices for every particle i
     """
 
@@ -347,6 +344,7 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0, p
 
     returns:
         A_ij: array of A_ij, containing x and y component for every neighbour j of particle i
+            !! important: indices i and j are switched compared to definition in Ivanova 2013
     """
 
 
@@ -400,11 +398,9 @@ def Aij_Ivanova(pind, x, y, h, m, rho, kernel='cubic_spline', fact=1.0, L=1.0, p
 
         V_j = 1/omega[nj]
 
-        A_ij[j] = V_j * grad_psi_i_xj - V_i * grad_psi_j_xi
+        A_ij[j] = V_i * grad_psi_j_xi - V_j * grad_psi_i_xj
 
-    # return -A_ij: You will actually use A_ji . F in the formula
-    # for the hydrodynamics, not A_ij . F
-    return -A_ij
+    return A_ij
 
 
 
@@ -492,7 +488,7 @@ def get_grad_psi_j_at_i_analytical(x, y, h, omega, psi_j_at_i, neighbour_data,
 
     for i in range(npart):
         for j, jind in enumerate(neighbours[i]):
-            dx, dy = get_dx( x[i], x[jind], y[i], y[jind], L=L, periodic=periodic)
+            dx, dy = get_dx(x[i], x[jind], y[i], y[jind], L=L, periodic=periodic)
             r = np.sqrt(dx**2 + dy**2)
 
             dwdr = dWdr(r/h[i], h[i], kernel)

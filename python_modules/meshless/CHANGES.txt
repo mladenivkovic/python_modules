@@ -1,3 +1,4 @@
+v0.1.13 13.11.2019 -- fixed neighboursearch; forgot to un-comment iind search. Extended check_version.py
 v0.1.12 10.11.2019 -- another neighboursearch overhaul
 v0.1.11 07.11.2019 -- bugfix neighbours. Added faster version to search for neighbours.
 v0.1.10 06.11.2019 -- bugfix in Aij_Ivanova_all. Removed whitespaces.
