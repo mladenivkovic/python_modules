@@ -335,6 +335,11 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
            self.x = np.zeros(self.size, dtype=np.float)
            self.y = np.zeros(self.size, dtype=np.float)
            self.h = np.zeros(self.size, dtype=np.float)
+           self.xmin = 1e300
+           self.xmax = -1e300
+           self.ymin = 1e300
+           self.ymax = -1e300
+           self.hmax = -1e300
            return
 
         def add_particle(self, ind, xp, yp, hp):
@@ -353,24 +358,49 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             self.y[self.npart] = yp
             self.h[self.npart] = hp
             self.npart += 1
+
+            if self.xmax < xp: self.xmax = xp
+            if self.xmin > xp: self.xmin = xp
+            if self.ymax < yp: self.ymax = yp
+            if self.ymin > yp: self.ymin = yp
+            if self.hmax < hp: self.hmax = hp
             
             return
 
+        def is_within_h(self, xp, yp, hp):
+            """
+            Check whether any particle of this cell is within
+            compact support of particle with x, y, h = xp, yp, hp
+            """
+            dx1, dy1 = get_dx(xp, self.xmax, yp, self.ymax, L=L, periodic=periodic)
+            dx2, dy2 = get_dx(xp, self.xmin, yp, self.ymin, L=L, periodic=periodic)
+            dxsq = min(dx1*dx1, dx2*dx2)
+            dysq = min(dy1*dy1, dy2*dy2)
+            if dxsq / hp**2 <= 1 or dysq / hp**2 <= 1:
+                return True
+            else:
+                return False
+
 
     
-    #-------------------------------------------------------
-    def find_neighbours_in_cell(i, j, p, xx, yy, hh):
-    #-------------------------------------------------------
+    #---------------------------------------------------------------
+    def find_neighbours_in_cell(i, j, p, xx, yy, hh, is_self):
+    #---------------------------------------------------------------
         """
         Find neighbours of a particle in the cell with indices i,j
         of the grid
         p:      global particle index to work with
         xx, yy: position of particle x
         hh:     compact support radius for p
+        is_self: whether this is the cell where p is in
         """
         n = 0
         neigh = [0 for i in range(1000)]
         ncell = grid[i][j] # neighbour cell we're checking for
+
+        if not is_self:
+            if not ncell.is_within_h(xx, yy, hh):
+                return []
 
         N = ncell.npart
         
@@ -388,7 +418,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             if dist <= fhsq:
                 try:
                     neigh[n] = cp
-                except ValueError:
+                except IndexError:
                     nneigh+=[0 for i in range(1000)]
                     nneigh[n] = cp
                 n += 1
@@ -499,13 +529,14 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                         yp = cell.y[pc]
                         hp = cell.h[pc]
 
-                        neighbours[pg] += find_neighbours_in_cell(iind, jind, pg, xp, yp, hp)
+                        neighbours[pg] += find_neighbours_in_cell(iind, jind, pg, xp, yp, hp, iind==col and jind==row)
 
 
     # sort neighbours by index
     for p in range(npart):
         neighbours[p].sort()
         nneigh[p] = len(neighbours[p])
+
 
 
 
