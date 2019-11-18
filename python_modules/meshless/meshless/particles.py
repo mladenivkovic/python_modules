@@ -204,6 +204,7 @@ def find_central_particle(L, ids):
 #======================================
     """
     Find the index of the central particle at (0.5, 0.5)
+    assumes Lx = Ly = L
     """
 
     i = L//2-1
@@ -244,23 +245,28 @@ def get_dx(x1, x2, y1, y2, L=1.0, periodic=True):
     L:          boxsize
     periodic:   whether to assume periodic boundaries
     """
-
     dx = x1 - x2
     dy = y1 - y2
 
     if periodic:
 
-        Lhalf = 0.5*L
+        if hasattr(L, "__len__"):
+            Lxhalf = L[0]/2.0
+            Lyhalf = L[1]/2.0
+        else:
+            Lxhalf = L/2.0
+            Lyhalf = L/2.0
+            L = [L, L]
 
-        if dx > Lhalf:
-            dx -= L
-        elif dx < -Lhalf:
-            dx += L
+        if dx > Lxhalf:
+            dx -= L[0]
+        elif dx < -Lxhalf:
+            dx += L[0]
 
-        if dy > Lhalf:
-            dy -= L
-        elif dy < -Lhalf:
-            dy += L
+        if dy > Lyhalf:
+            dy -= L[1]
+        elif dy < -Lyhalf:
+            dy += L[1]
 
 
     return dx, dy
@@ -277,9 +283,10 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
 #========================================================================
     """
     Gets all the neighbour data for all particles ready.
+    Assumes domain is a rectangle with boxsize L[0], L[1].
     x, y, h:    arrays of positions/h of all particles
     fact:       kernel support radius factor: W = 0 for r > fact*h
-    L:          boxsize
+    L:          boxsize. List/Array or scalar.
     periodic:   Whether you assume periodic boundary conditions
 
     returns neighbour_data object:
@@ -296,6 +303,12 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
 
     import copy
 
+    # if it isn't in a list already, create one
+    # do this before function/class definition
+    if not hasattr(L, "__len__"):
+        L = [L, L]
+
+
     #-----------------------------------------------
     class neighbour_data:
     #-----------------------------------------------
@@ -306,12 +319,13 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             self.iinds = iinds
 
 
+
     #-----------------------------------------------
     class cell:
     #-----------------------------------------------
         """
         A cell object to store particles in.
-        Stores particle indexes, positions, compact support lengths
+        Stores particle indexes, positions, compact support radii
         """
 
         def __init__(self):
@@ -339,11 +353,11 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             self.y[self.npart] = yp
             self.h[self.npart] = hp
             self.npart += 1
-
+            
             return
 
 
-
+    
     #-------------------------------------------------------
     def find_neighbours_in_cell(i, j, p, xx, yy, hh):
     #-------------------------------------------------------
@@ -359,7 +373,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
         ncell = grid[i][j] # neighbour cell we're checking for
 
         N = ncell.npart
-
+        
         fhsq = hh*hh*fact*fact
 
         for c, cp in enumerate(ncell.parts[:N]):
@@ -386,113 +400,104 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
 
     npart = x.shape[0]
 
+
     # first find cell size
-    ncells = int(L/h.max()) + 1
-    cell_size = L/ncells
-    #  print("ncells is", ncells)
-    #  print("cell size is", cell_size)
+    ncells_x = int(L[0]/h.max()) + 1
+    ncells_y = int(L[1]/h.max()) + 1
+    cell_size_x = L[0]/ncells_x
+    cell_size_y = L[1]/ncells_y
 
     # create grid
-    grid = [[cell() for i in range(ncells)] for j in range(ncells)]
+    grid = [[cell() for j in range(ncells_y)] for i in range(ncells_x)]
 
     # sort out particles
     for p in range(npart):
-        i = int(x[p]/cell_size)
-        j = int(y[p]/cell_size)
+        i = int(x[p]/cell_size_x)
+        j = int(y[p]/cell_size_y)
         grid[i][j].add_particle(p, x[p], y[p], h[p])
 
 
     neighbours = [[] for i in x]
     nneigh = np.zeros(npart, dtype=np.int)
-
-
-    if ncells < 4:
-        # you'll always need to check all cells, so just do that
-        i_search = np.zeros(ncells*ncells, dtype=np.int)
-        j_search = np.zeros(ncells*ncells, dtype=np.int)
-        ind = 0
-        for i in range(ncells):
-            for j in range(ncells):
-                i_search[ind] = i
-                j_search[ind] = j
-                ind += 1
-
-        # main loop: find and store all neighbours:
-        for p in range(npart):
-            nbors = []
-            for i,j in zip(i_search, j_search):
-                nbors += find_neighbours_in_cell(i, j, p, x[p], y[p], h[p])
-
-            neighbours[p] = nbors
-            nneigh[p] = len(nbors)
-
-        return neighbours, nneigh
-
+   
 
 
 
 
     # main loop: find and store all neighbours;
     # go cell by cell
-    for row in range(ncells):
-        for col in range(ncells):
+    for row in range(ncells_y):
+        for col in range(ncells_x):
 
-            cell = grid[row][col]
+            cell = grid[col][row]
             N = cell.npart
             parts = cell.parts
             if N == 0: continue
 
             hmax = cell.h[:N].max()
 
-            maxdist = int(cell_size/hmax+0.5) + 1
+            # find over how many cells to loop in every direction
+            maxdistx = int(cell_size_x/hmax+0.5) + 1
+            maxdisty = int(cell_size_y/hmax+0.5) + 1
+            
+            xstart = -maxdistx
+            xstop = maxdistx+1
+            ystart = -maxdisty
+            ystop = maxdisty+1
+
+            # exception handling: if ncells < 4, just loop over
+            # all of them so that you don't add neighbours multiple
+            # times
+            if ncells_x < 4:
+                xstart = 0
+                xstop = ncells_x
+            if ncells_y < 4:
+                ystart = 0
+                ystop = ncells_y
+
+            checked_cells = [(None, None) for i in range((2*maxdistx+1)*(2*maxdisty + 1))]
+            it = 0
 
             # loop over all neighbours
             # need to loop over entire square. You need to consider
             # the maximal distance from the edges/corners, not from
             # the center of the cell!
-            for i in range(-maxdist, maxdist+1):
-                for j in range(-maxdist, maxdist+1):
-                    iind = row+i
-                    jind = col+j
+            for i in range(xstart, xstop):
+                for j in range(ystart, ystop):
+                    
+                    if ncells_x < 4:
+                        iind = i
+                    else:
+                        iind = col+i
+ 
+                    if ncells_y < 4:
+                        jind = j
+                    else:
+                        jind = row+j
 
                     if periodic:
-                        while iind<0: iind += ncells
-                        while iind>=ncells: iind -= ncells
-                        while jind<0: jind += ncells
-                        while jind>=ncells: jind -= ncells
+                        while iind<0: iind += ncells_x
+                        while iind>=ncells_x: iind -= ncells_x
+                        while jind<0: jind += ncells_y
+                        while jind>=ncells_y: jind -= ncells_y
                     else:
-                        if iind < 0 or iind >= ncells:
+                        if iind < 0 or iind >= ncells_x:
                             continue
-                        if jind < 0 or jind >= ncells:
+                        if jind < 0 or jind >= ncells_y:
                             continue
 
-                    # get closest corner of neighbour
-                    ic = iind
-                    if i < 0: ic += 1
-                    jc = jind
-                    if j < 0: jc += 1
+                    it += 1
+                    if (iind, jind) in checked_cells[:it-1]:
+                        continue
+                    else:
+                        checked_cells[it-1] = (iind, jind)
 
-                    xc = ic*cell_size
-                    yc = jc*cell_size
-
-                    # loop over all particles in cell
+                    # loop over all particles in THIS cell
                     for pc, pg in enumerate(cell.parts[:N]):
 
                         xp = cell.x[pc]
                         yp = cell.y[pc]
                         hp = cell.h[pc]
-
-                        # if i or j = 0, then compare to the edge, not to the corner
-                        if i == 0:
-                            xc = xp
-                        if j == 0:
-                            yc = yp
-
-                        # check distance to corner of neighbour cell
-                        dx, dy = get_dx(xp, xc, yp, yc, L=L, periodic=periodic)
-                        dsq = dx**2 + dy**2
-                        if dsq / hp**2 > 1:
-                            continue
 
                         neighbours[pg] += find_neighbours_in_cell(iind, jind, pg, xp, yp, hp)
 
@@ -501,9 +506,6 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
     for p in range(npart):
         neighbours[p].sort()
         nneigh[p] = len(neighbours[p])
-
-
-
 
 
 
