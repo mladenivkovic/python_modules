@@ -364,7 +364,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             if self.ymax < yp: self.ymax = yp
             if self.ymin > yp: self.ymin = yp
             if self.hmax < hp: self.hmax = hp
-            
+
             return
 
         def is_within_h(self, xp, yp, hp):
@@ -382,7 +382,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                 return False
 
 
-    
+
     #---------------------------------------------------------------
     def find_neighbours_in_cell(i, j, p, xx, yy, hh, is_self):
     #---------------------------------------------------------------
@@ -403,7 +403,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                 return []
 
         N = ncell.npart
-        
+
         fhsq = hh*hh*fact*fact
 
         for c, cp in enumerate(ncell.parts[:N]):
@@ -449,7 +449,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
 
     neighbours = [[] for i in x]
     nneigh = np.zeros(npart, dtype=np.int)
-   
+
 
 
 
@@ -469,7 +469,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             # find over how many cells to loop in every direction
             maxdistx = int(cell_size_x/hmax+0.5) + 1
             maxdisty = int(cell_size_y/hmax+0.5) + 1
-            
+
             xstart = -maxdistx
             xstop = maxdistx+1
             ystart = -maxdisty
@@ -494,12 +494,12 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             # the center of the cell!
             for i in range(xstart, xstop):
                 for j in range(ystart, ystop):
-                    
+
                     if ncells_x < 4:
                         iind = i
                     else:
                         iind = col+i
- 
+
                     if ncells_y < 4:
                         jind = j
                     else:
