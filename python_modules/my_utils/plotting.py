@@ -71,7 +71,7 @@ def setplotparams_multiple_plots(
                                     left=0.05, 
                                     right=0.97, 
                                     bottom=0.10, 
-                                    top=0.92, 
+                                    top=0.91, 
                                     wspace=0.15, 
                                     hspace=0.15,
                                     tinyfont=10,
@@ -81,7 +81,7 @@ def setplotparams_multiple_plots(
                                 ):
 #======================================================
     """
-    Set rcParams for nice looking plots. Intended for about figsize 5 x 5.5 per 
+    Set rcParams for nice looking plots. Intended for about figsize 5.5 x 5.5 per 
     subplot Set those when calling plt.figure()
     For presentation: make all text bigger
     """
