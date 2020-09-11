@@ -15,11 +15,9 @@
 import numpy as np
 
 
-
-
-#===============================================
+# ===============================================
 def find_index(x, y, pcoord, tolerance=1e-3):
-#===============================================
+    # ===============================================
     """
     Find the index in the read-in arrays where
     the particle with coordinates of your choice is
@@ -32,21 +30,16 @@ def find_index(x, y, pcoord, tolerance=1e-3):
     """
 
     for i in range(x.shape[0]):
-        if abs(x[i]-pcoord[0]) < tolerance and abs(y[i] - pcoord[1]) < tolerance:
+        if abs(x[i] - pcoord[0]) < tolerance and abs(y[i] - pcoord[1]) < tolerance:
             pind = i
             break
 
     return pind
 
 
-
-
-
-
-
-#===============================================
-def find_index_by_id( ids, id_to_look_for ):
-#===============================================
+# ===============================================
+def find_index_by_id(ids, id_to_look_for):
+    # ===============================================
     """
     Find the index in the read-in arrays where
     the particle with id_to_look_for is
@@ -59,20 +52,14 @@ def find_index_by_id( ids, id_to_look_for ):
 
     """
 
-    pind = np.asscalar(np.where(ids==id_to_look_for)[0])
+    pind = np.asscalar(np.where(ids == id_to_look_for)[0])
 
     return pind
 
 
-
-
-
-
-
-
-#================================================================
+# ================================================================
 def find_neighbours(ind, x, y, h, fact=1.0, L=1.0, periodic=True):
-#================================================================
+    # ================================================================
     """
     Find indices of all neighbours of a particle with index ind
     within fact*h (where kernel != 0)
@@ -84,13 +71,12 @@ def find_neighbours(ind, x, y, h, fact=1.0, L=1.0, periodic=True):
     returns list of neighbour indices in x,y,h array
     """
 
-
     # None for Gaussian
     if fact is not None:
 
         x0 = x[ind]
         y0 = y[ind]
-        fhsq = h[ind]*h[ind]*fact*fact
+        fhsq = h[ind] * h[ind] * fact * fact
         neigh = [None for i in x]
 
         j = 0
@@ -100,7 +86,7 @@ def find_neighbours(ind, x, y, h, fact=1.0, L=1.0, periodic=True):
 
             dx, dy = get_dx(x0, x[i], y0, y[i], L=L, periodic=periodic)
 
-            dist = dx**2 + dy**2
+            dist = dx ** 2 + dy ** 2
 
             if dist < fhsq:
                 neigh[j] = i
@@ -114,16 +100,9 @@ def find_neighbours(ind, x, y, h, fact=1.0, L=1.0, periodic=True):
         return neigh
 
 
-
-
-
-
-
-
-
-#=================================================================================
+# =================================================================================
 def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1.0, L=1.0, periodic=True):
-#=================================================================================
+    # =================================================================================
     """
     Find indices of all neighbours around position x0, y0
     within fact*h (where kernel != 0)
@@ -135,39 +114,36 @@ def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1.0, L=1.0, periodic=True)
     returns list of neighbour indices
     """
 
-
     # None for Gaussian
     if fact is not None:
         neigh = [None for i in x]
         j = 0
 
-
         if isinstance(h, np.ndarray):
-            fsq = fact*fact
+            fsq = fact * fact
 
             for i in range(x.shape[0]):
 
                 dx, dy = get_dx(x0, x[i], y0, y[i], L=L, periodic=periodic)
 
-                dist = dx**2 + dy**2
+                dist = dx ** 2 + dy ** 2
 
-                fhsq = h[i]*h[i]*fsq
+                fhsq = h[i] * h[i] * fsq
                 if dist < fhsq:
-                    neigh[j]=i
-                    j+=1
+                    neigh[j] = i
+                    j += 1
 
         else:
-            fhsq = fact*fact*h*h
+            fhsq = fact * fact * h * h
             for i in range(x.shape[0]):
 
                 dx, dy = get_dx(x0, x[i], y0, y[i], L=L, periodic=periodic)
 
-                dist = dx**2 + dy**2
+                dist = dx ** 2 + dy ** 2
 
                 if dist < fhsq:
                     neigh[j] = i
-                    j+=1
-
+                    j += 1
 
         return neigh[:j]
 
@@ -176,69 +152,53 @@ def find_neighbours_arbitrary_x(x0, y0, x, y, h, fact=1.0, L=1.0, periodic=True)
         return neigh
 
 
-
-
-
-
-
-
-#===================
+# ===================
 def V(ind, m, rho):
-#===================
+    # ===================
     """
     Volume estimate for particle with index ind
     """
-    V = m[ind]/rho[ind]
+    V = m[ind] / rho[ind]
     if V > 1:
-        print("Got particle volume V=", V, ". Did you put the arguments in the correct places?")
+        print(
+            "Got particle volume V=",
+            V,
+            ". Did you put the arguments in the correct places?",
+        )
     return V
 
 
-
-
-
-
-
-#======================================
+# ======================================
 def find_central_particle(L, ids):
-#======================================
+    # ======================================
     """
     Find the index of the central particle at (0.5, 0.5)
     assumes Lx = Ly = L
     """
 
-    i = L//2-1
-    cid = i*L + i + 1
-    cind = np.asscalar(np.where(ids==cid)[0])
+    i = L // 2 - 1
+    cid = i * L + i + 1
+    cind = np.asscalar(np.where(ids == cid)[0])
 
     return cind
 
 
-
-
-
-
-#======================================
+# ======================================
 def find_added_particle(ids):
-#======================================
+    # ======================================
     """
     Find the index of the added particle (has highest ID)
     """
 
     pid = ids.shape[0]
-    pind = np.asscalar(np.where(ids==pid)[0])
+    pind = np.asscalar(np.where(ids == pid)[0])
 
     return pind
 
 
-
-
-
-
-
-#=====================================================
+# =====================================================
 def get_dx(x1, x2, y1, y2, L=1.0, periodic=True):
-#=====================================================
+    # =====================================================
     """
     Compute difference of vectors [x1 - x2, y1 - y2] while
     checking for periodicity if necessary
@@ -251,11 +211,11 @@ def get_dx(x1, x2, y1, y2, L=1.0, periodic=True):
     if periodic:
 
         if hasattr(L, "__len__"):
-            Lxhalf = L[0]/2.0
-            Lyhalf = L[1]/2.0
+            Lxhalf = L[0] / 2.0
+            Lyhalf = L[1] / 2.0
         else:
-            Lxhalf = L/2.0
-            Lyhalf = L/2.0
+            Lxhalf = L / 2.0
+            Lyhalf = L / 2.0
             L = [L, L]
 
         if dx > Lxhalf:
@@ -268,19 +228,12 @@ def get_dx(x1, x2, y1, y2, L=1.0, periodic=True):
         elif dy < -Lyhalf:
             dy += L[1]
 
-
     return dx, dy
 
 
-
-
-
-
-
-
-#========================================================================
+# ========================================================================
 def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
-#========================================================================
+    # ========================================================================
     """
     Gets all the neighbour data for all particles ready.
     Assumes domain is a rectangle with boxsize L[0], L[1].
@@ -308,39 +261,36 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
     if not hasattr(L, "__len__"):
         L = [L, L]
 
-
-    #-----------------------------------------------
+    # -----------------------------------------------
     class neighbour_data:
-    #-----------------------------------------------
+        # -----------------------------------------------
         def __init__(self, neighbours=None, maxneigh=None, nneigh=None, iinds=None):
             self.neighbours = neighbours
             self.maxneigh = maxneigh
             self.nneigh = nneigh
             self.iinds = iinds
 
-
-
-    #-----------------------------------------------
+    # -----------------------------------------------
     class cell:
-    #-----------------------------------------------
+        # -----------------------------------------------
         """
         A cell object to store particles in.
         Stores particle indexes, positions, compact support radii
         """
 
         def __init__(self):
-           self.npart = 0
-           self.size = 100
-           self.parts = np.zeros(self.size, dtype=np.int)
-           self.x = np.zeros(self.size, dtype=np.float)
-           self.y = np.zeros(self.size, dtype=np.float)
-           self.h = np.zeros(self.size, dtype=np.float)
-           self.xmin = 1e300
-           self.xmax = -1e300
-           self.ymin = 1e300
-           self.ymax = -1e300
-           self.hmax = -1e300
-           return
+            self.npart = 0
+            self.size = 100
+            self.parts = np.zeros(self.size, dtype=np.int)
+            self.x = np.zeros(self.size, dtype=np.float)
+            self.y = np.zeros(self.size, dtype=np.float)
+            self.h = np.zeros(self.size, dtype=np.float)
+            self.xmin = 1e300
+            self.xmax = -1e300
+            self.ymin = 1e300
+            self.ymax = -1e300
+            self.hmax = -1e300
+            return
 
         def add_particle(self, ind, xp, yp, hp):
             """
@@ -359,11 +309,16 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             self.h[self.npart] = hp
             self.npart += 1
 
-            if self.xmax < xp: self.xmax = xp
-            if self.xmin > xp: self.xmin = xp
-            if self.ymax < yp: self.ymax = yp
-            if self.ymin > yp: self.ymin = yp
-            if self.hmax < hp: self.hmax = hp
+            if self.xmax < xp:
+                self.xmax = xp
+            if self.xmin > xp:
+                self.xmin = xp
+            if self.ymax < yp:
+                self.ymax = yp
+            if self.ymin > yp:
+                self.ymin = yp
+            if self.hmax < hp:
+                self.hmax = hp
 
             return
 
@@ -374,18 +329,16 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             """
             dx1, dy1 = get_dx(xp, self.xmax, yp, self.ymax, L=L, periodic=periodic)
             dx2, dy2 = get_dx(xp, self.xmin, yp, self.ymin, L=L, periodic=periodic)
-            dxsq = min(dx1*dx1, dx2*dx2)
-            dysq = min(dy1*dy1, dy2*dy2)
-            if dxsq / hp**2 <= 1 or dysq / hp**2 <= 1:
+            dxsq = min(dx1 * dx1, dx2 * dx2)
+            dysq = min(dy1 * dy1, dy2 * dy2)
+            if dxsq / hp ** 2 <= 1 or dysq / hp ** 2 <= 1:
                 return True
             else:
                 return False
 
-
-
-    #---------------------------------------------------------------
+    # ---------------------------------------------------------------
     def find_neighbours_in_cell(i, j, p, xx, yy, hh, is_self):
-    #---------------------------------------------------------------
+        # ---------------------------------------------------------------
         """
         Find neighbours of a particle in the cell with indices i,j
         of the grid
@@ -396,7 +349,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
         """
         n = 0
         neigh = [0 for i in range(1000)]
-        ncell = grid[i][j] # neighbour cell we're checking for
+        ncell = grid[i][j]  # neighbour cell we're checking for
 
         if not is_self:
             if not ncell.is_within_h(xx, yy, hh):
@@ -404,7 +357,7 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
 
         N = ncell.npart
 
-        fhsq = hh*hh*fact*fact
+        fhsq = hh * hh * fact * fact
 
         for c, cp in enumerate(ncell.parts[:N]):
             if cp == p:
@@ -413,46 +366,37 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
 
             dx, dy = get_dx(xx, ncell.x[c], yy, ncell.y[c], L=L, periodic=periodic)
 
-            dist = dx**2 + dy**2
+            dist = dx ** 2 + dy ** 2
 
             if dist <= fhsq:
                 try:
                     neigh[n] = cp
                 except IndexError:
-                    nneigh+=[0 for i in range(1000)]
+                    nneigh += [0 for i in range(1000)]
                     nneigh[n] = cp
                 n += 1
 
         return neigh[:n]
 
-
-
-
     npart = x.shape[0]
 
-
     # first find cell size
-    ncells_x = int(L[0]/h.max()) + 1
-    ncells_y = int(L[1]/h.max()) + 1
-    cell_size_x = L[0]/ncells_x
-    cell_size_y = L[1]/ncells_y
+    ncells_x = int(L[0] / h.max()) + 1
+    ncells_y = int(L[1] / h.max()) + 1
+    cell_size_x = L[0] / ncells_x
+    cell_size_y = L[1] / ncells_y
 
     # create grid
     grid = [[cell() for j in range(ncells_y)] for i in range(ncells_x)]
 
     # sort out particles
     for p in range(npart):
-        i = int(x[p]/cell_size_x)
-        j = int(y[p]/cell_size_y)
+        i = int(x[p] / cell_size_x)
+        j = int(y[p] / cell_size_y)
         grid[i][j].add_particle(p, x[p], y[p], h[p])
-
 
     neighbours = [[] for i in x]
     nneigh = np.zeros(npart, dtype=np.int)
-
-
-
-
 
     # main loop: find and store all neighbours;
     # go cell by cell
@@ -462,18 +406,19 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
             cell = grid[col][row]
             N = cell.npart
             parts = cell.parts
-            if N == 0: continue
+            if N == 0:
+                continue
 
             hmax = cell.h[:N].max()
 
             # find over how many cells to loop in every direction
-            maxdistx = int(cell_size_x/hmax+0.5) + 1
-            maxdisty = int(cell_size_y/hmax+0.5) + 1
+            maxdistx = int(cell_size_x / hmax + 0.5) + 1
+            maxdisty = int(cell_size_y / hmax + 0.5) + 1
 
             xstart = -maxdistx
-            xstop = maxdistx+1
+            xstop = maxdistx + 1
             ystart = -maxdisty
-            ystop = maxdisty+1
+            ystop = maxdisty + 1
 
             # exception handling: if ncells < 4, just loop over
             # all of them so that you don't add neighbours multiple
@@ -485,7 +430,9 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                 ystart = 0
                 ystop = ncells_y
 
-            checked_cells = [(None, None) for i in range((2*maxdistx+1)*(2*maxdisty + 1))]
+            checked_cells = [
+                (None, None) for i in range((2 * maxdistx + 1) * (2 * maxdisty + 1))
+            ]
             it = 0
 
             # loop over all neighbours
@@ -498,18 +445,22 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                     if ncells_x < 4:
                         iind = i
                     else:
-                        iind = col+i
+                        iind = col + i
 
                     if ncells_y < 4:
                         jind = j
                     else:
-                        jind = row+j
+                        jind = row + j
 
                     if periodic:
-                        while iind<0: iind += ncells_x
-                        while iind>=ncells_x: iind -= ncells_x
-                        while jind<0: jind += ncells_y
-                        while jind>=ncells_y: jind -= ncells_y
+                        while iind < 0:
+                            iind += ncells_x
+                        while iind >= ncells_x:
+                            iind -= ncells_x
+                        while jind < 0:
+                            jind += ncells_y
+                        while jind >= ncells_y:
+                            jind -= ncells_y
                     else:
                         if iind < 0 or iind >= ncells_x:
                             continue
@@ -517,10 +468,10 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                             continue
 
                     it += 1
-                    if (iind, jind) in checked_cells[:it-1]:
+                    if (iind, jind) in checked_cells[: it - 1]:
                         continue
                     else:
-                        checked_cells[it-1] = (iind, jind)
+                        checked_cells[it - 1] = (iind, jind)
 
                     # loop over all particles in THIS cell
                     for pc, pg in enumerate(cell.parts[:N]):
@@ -529,28 +480,25 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                         yp = cell.y[pc]
                         hp = cell.h[pc]
 
-                        neighbours[pg] += find_neighbours_in_cell(iind, jind, pg, xp, yp, hp, iind==col and jind==row)
-
+                        neighbours[pg] += find_neighbours_in_cell(
+                            iind, jind, pg, xp, yp, hp, iind == col and jind == row
+                        )
 
     # sort neighbours by index
     for p in range(npart):
         neighbours[p].sort()
         nneigh[p] = len(neighbours[p])
 
-
-
-
     # max number of neighbours; needed for array allocation
     maxneigh = nneigh.max()
 
-
     # store the index of particle i when required as the neighbour of particle j in arrays[npart, maxneigh]
     # i.e. find index 0 <= i < maxneigh for ever j
-    iinds = np.zeros((npart, 2*maxneigh), dtype=np.int)
+    iinds = np.zeros((npart, 2 * maxneigh), dtype=np.int)
     current_count = copy.copy(nneigh)
 
     for i in range(npart):
-        for jc,j in enumerate(neighbours[i]):
+        for jc, j in enumerate(neighbours[i]):
 
             try:
                 iinds[i, jc] = (neighbours[j]).index(i)
@@ -558,10 +506,12 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                 # it is possible that j is a neighbour for i, but i is not a neighbour
                 # for j depending on their respective smoothing lengths
                 dx, dy = get_dx(x[i], x[j], y[i], y[j], L=L, periodic=periodic)
-                r = np.sqrt(dx**2 + dy**2)
-                if r/h[j] < 1:
-                    print("something went wrong when computing iinds in get_neighbour_data_for_all.")
-                    print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r/h[j])
+                r = np.sqrt(dx ** 2 + dy ** 2)
+                if r / h[j] < 1:
+                    print(
+                        "something went wrong when computing iinds in get_neighbour_data_for_all."
+                    )
+                    print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r / h[j])
                     print("neighbours i:", neighbours[i])
                     print("neighbours j:", neighbours[j])
                     print("couldn't find i as neighbour of j")
@@ -572,24 +522,16 @@ def get_neighbour_data_for_all(x, y, h, fact=1.0, L=1.0, periodic=True):
                     iinds[i, jc] = current_count[j]
                     current_count[j] += 1
 
-
-    nd = neighbour_data(neighbours=neighbours,
-                        maxneigh=maxneigh,
-                        nneigh=nneigh,
-                        iinds=iinds)
-
+    nd = neighbour_data(
+        neighbours=neighbours, maxneigh=maxneigh, nneigh=nneigh, iinds=iinds
+    )
 
     return nd
 
 
-
-
-
-
-
-#===============================================================================
+# ===============================================================================
 def get_neighbour_data_for_all_naive(x, y, h, fact=1.0, L=1.0, periodic=True):
-#===============================================================================
+    # ===============================================================================
     """
     Gets all the neighbour data for all particles ready.
     Naive way: Loop over all particles for each particle
@@ -619,24 +561,21 @@ def get_neighbour_data_for_all_naive(x, y, h, fact=1.0, L=1.0, periodic=True):
     for i in range(npart):
         neighbours[i] = find_neighbours(i, x, y, h, fact=fact, L=L, periodic=periodic)
 
-
     # get neighbour counts array
     nneigh = np.zeros((npart), dtype=np.int)
     for i in range(npart):
         nneigh[i] = len(neighbours[i])
 
-
     # max number of neighbours; needed for array allocation
     maxneigh = nneigh.max()
 
-
     # store the index of particle i when required as the neighbour of particle j in arrays[npart, maxneigh]
     # i.e. find index 0 <= i < maxneigh for ever j
-    iinds = np.zeros((npart, 2*maxneigh), dtype=np.int)
+    iinds = np.zeros((npart, 2 * maxneigh), dtype=np.int)
     current_count = copy.copy(nneigh)
 
     for i in range(npart):
-        for jc,j in enumerate(neighbours[i]):
+        for jc, j in enumerate(neighbours[i]):
 
             try:
                 iinds[i, jc] = (neighbours[j]).index(i)
@@ -644,10 +583,10 @@ def get_neighbour_data_for_all_naive(x, y, h, fact=1.0, L=1.0, periodic=True):
                 # it is possible that j is a neighbour for i, but i is not a neighbour
                 # for j depending on their respective smoothing lengths
                 dx, dy = get_dx(x[i], x[j], y[i], y[j], L=L, periodic=periodic)
-                r = np.sqrt(dx**2 + dy**2)
-                if r/h[j] < 1:
+                r = np.sqrt(dx ** 2 + dy ** 2)
+                if r / h[j] < 1:
                     print("something went wrong when computing iinds.")
-                    print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r/h[j])
+                    print("i=", i, "j=", j, "r=", r, "H=", h[j], "r/H=", r / h[j])
                     print("neighbours i:", neighbours[i])
                     print("neighbours j:", neighbours[j])
                     print("couldn't find i as neighbour of j")
@@ -658,7 +597,6 @@ def get_neighbour_data_for_all_naive(x, y, h, fact=1.0, L=1.0, periodic=True):
                     iinds[i, jc] = current_count[j]
                     current_count[j] += 1
 
-
     class neighbour_data:
         def __init__(self, neighbours=None, maxneigh=None, nneigh=None, iinds=None):
             self.neighbours = neighbours
@@ -666,10 +604,8 @@ def get_neighbour_data_for_all_naive(x, y, h, fact=1.0, L=1.0, periodic=True):
             self.nneigh = nneigh
             self.iinds = iinds
 
-    nd = neighbour_data(neighbours=neighbours,
-                        maxneigh=maxneigh,
-                        nneigh=nneigh,
-                        iinds=iinds)
-
+    nd = neighbour_data(
+        neighbours=neighbours, maxneigh=maxneigh, nneigh=nneigh, iinds=iinds
+    )
 
     return nd
